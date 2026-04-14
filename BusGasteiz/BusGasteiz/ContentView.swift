@@ -8,6 +8,45 @@
 import SwiftUI
 import MapKit
 
+// MARK: - Pre-calentamiento de MapKit
+
+/// Crea un MKMapView real (a tamaño de pantalla, con región establecida) y lo
+/// mantiene vivo como propiedad estática. Al insertar esta vista en el árbol de
+/// SwiftUI al arrancar la app, Metal/MapKit inicializa sus recursos (texturas,
+/// shader library, tile pipeline) antes de que el usuario cambie a la pestaña
+/// del mapa, eliminando el freeze de ~1 s en la primera apertura.
+///
+/// Se usa UIViewRepresentable en lugar de `Map {}` porque SwiftUI puede omitir
+/// el render pass de vistas con opacity(0)/frame 1×1, mientras que makeUIView()
+/// de UIViewRepresentable se llama siempre al insertar la vista en el árbol.
+private struct MapKitPrewarm: UIViewRepresentable {
+
+    /// Instancia estática: se crea una sola vez y nunca se libera.
+    static let mapView: MKMapView = {
+        let frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let m = MKMapView(frame: frame)
+        // alpha = 0 en UIKit: la vista sigue procesada por Metal pero no se compone
+        // en el framebuffer final, por lo que es invisible para el usuario.
+        m.alpha = 0
+        // Establecer la región de Vitoria-Gasteiz fuerza la inicialización del
+        // tile pipeline al zoom correcto, que es el que usará BusMapView.
+        m.setRegion(
+            MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 42.846718, longitude: -2.671622),
+                latitudinalMeters: 1600,
+                longitudinalMeters: 1600
+            ),
+            animated: false
+        )
+        return m
+    }()
+
+    func makeUIView(context: Context) -> MKMapView { Self.mapView }
+    func updateUIView(_ uiView: MKMapView, context: Context) {}
+}
+
+// MARK: - Vista raíz
+
 struct ContentView: View {
     var body: some View {
         TabView {
@@ -33,12 +72,10 @@ struct ContentView: View {
             }
         }
         .background {
-            // MapKit (Metal + MKMapView) tarda ~2 s en inicializarse la primera vez.
-            // Este Map invisible fuerza esa inicialización mientras el usuario está
-            // en la pestaña Stops, de modo que al cambiar al mapa no hay freezing.
-            Map { }
+            // Insertamos el pre-warm en el árbol para que makeUIView() se llame
+            // en cuanto aparece ContentView (mientras el usuario ve la pestaña Stops).
+            MapKitPrewarm()
                 .frame(width: 1, height: 1)
-                .opacity(0.001)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }

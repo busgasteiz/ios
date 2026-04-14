@@ -19,6 +19,9 @@ struct BusMapView: View {
     @State private var isReloading = false
     @State private var visibleRegion: MKCoordinateRegion?
     @State private var recomputeTask: Task<Void, Never>?
+    /// Evita calcular anotaciones durante la animación de entrada de la pestaña.
+    /// Se activa una vez (350 ms después del primer onAppear) y ya no se resetea.
+    @State private var isReady = false
 
     var body: some View {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
@@ -75,13 +78,19 @@ struct BusMapView: View {
         .onChange(of: searchRadius) { centerOnUser() }
         .onMapCameraChange(frequency: .continuous) { context in
             visibleRegion = context.region
+            guard isReady else { return }
             recompute()
         }
         .onAppear {
             centerOnUser()
-            recompute()
             if dataManager.gtfsData == nil {
                 Task { await dataManager.refreshIfNeeded() }
+            }
+            guard !isReady else { return }
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                isReady = true
+                recompute()
             }
         }
     }
