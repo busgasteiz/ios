@@ -32,9 +32,21 @@ struct BusMapView: View {
         }
         .mapStyle(.standard)
         .mapControls {
-            MapUserLocationButton()
             MapCompass()
             MapScaleView()
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                centerOnUser()
+            } label: {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .padding(10)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 1)
+            }
+            .padding(.trailing, 8)
+            .padding(.bottom, 120)
         }
         .navigationTitle("Mapa")
         .navigationBarTitleDisplayMode(.inline)
