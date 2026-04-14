@@ -175,7 +175,7 @@ struct StopRowView: View {
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(nearby.stop.name)
+                Text(nearby.stop.localizedName)
                     .font(.body)
                     .foregroundStyle(.primary)
                 Text(distanceLabel(nearby.distance))

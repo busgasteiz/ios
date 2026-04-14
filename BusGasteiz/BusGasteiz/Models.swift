@@ -5,13 +5,28 @@ import CoreLocation
 
 struct StopInfo: Identifiable, Hashable, Sendable {
     let id: String
-    let name: String
+    let name: String          // Nombre base del GTFS (castellano en Tuvisa, euskera en Euskotren)
+    var nameEu: String? = nil // Nombre en euskera de translations.txt (solo Tuvisa)
+    var nameEs: String? = nil // Nombre en castellano de translations.txt (solo Tuvisa)
     let lat: Double
     let lon: Double
     var isTram: Bool = false
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
+    /// Nombre adaptado al idioma del sistema.
+    /// - Euskera: usa nameEu si está disponible, o name (Euskotren ya está en euskera)
+    /// - Castellano: usa nameEs si está disponible, o name
+    /// - Otros: usa name como fallback
+    var localizedName: String {
+        let lang = Locale.current.language.languageCode?.identifier ?? ""
+        switch lang {
+        case "eu": return nameEu ?? name
+        case "es": return nameEs ?? name
+        default:   return name
+        }
     }
 }
 

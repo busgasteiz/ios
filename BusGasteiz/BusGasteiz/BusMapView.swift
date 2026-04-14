@@ -23,7 +23,7 @@ struct BusMapView: View {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
-                Annotation(nearby.stop.name, coordinate: nearby.stop.coordinate, anchor: .bottom) {
+                Annotation(nearby.stop.localizedName, coordinate: nearby.stop.coordinate, anchor: .bottom) {
                     StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
                                        isTram: nearby.stop.isTram)
                 }

@@ -53,12 +53,12 @@ struct StopDetailView: View {
                 .refreshable { await refreshAndRecompute() }
             }
         }
-        .navigationTitle(stop.name)
+        .navigationTitle(stop.localizedName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 0) {
-                    Text(stop.name)
+                    Text(stop.localizedName)
                         .font(.headline)
                     Text(distanceLabel(distance))
                         .font(.caption)
@@ -266,7 +266,7 @@ struct RouteArrivalsView: View {
                         .background(Color(hex: routeColor))
                         .foregroundStyle(contrastColor)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                    Text(stop.name)
+                    Text(stop.localizedName)
                         .font(.headline)
                 }
             }

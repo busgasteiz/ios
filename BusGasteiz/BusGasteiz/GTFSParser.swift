@@ -120,6 +120,28 @@ nonisolated func loadGTFS(folder: String) -> GTFSData {
         }
     }
 
+    // translations.txt — nombres localizados de paradas (eu y es)
+    if let raw = try? String(contentsOfFile: "\(folder)/translations.txt", encoding: .utf8) {
+        var lines = raw.components(separatedBy: "\n")
+        let h = splitCSV(lines.removeFirst())
+        let iTbl = idx(h, "table_name"), iFld = idx(h, "field_name")
+        let iLng = idx(h, "language"),   iTrl = idx(h, "translation")
+        let iRid = idx(h, "record_id")
+        for ln in lines {
+            let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
+            let r = splitCSV(t)
+            guard get(r, iTbl) == "stops", get(r, iFld) == "stop_name" else { continue }
+            let lang = get(r, iLng); let rid = get(r, iRid)
+            guard !rid.isEmpty, !lang.isEmpty else { continue }
+            let translation = get(r, iTrl)
+            switch lang {
+            case "eu": g.stops[rid]?.nameEu = translation
+            case "es": g.stops[rid]?.nameEs = translation
+            default: break
+            }
+        }
+    }
+
     // calendar_dates.txt
     if let raw = try? String(contentsOfFile: "\(folder)/calendar_dates.txt", encoding: .utf8) {
         var lines = raw.components(separatedBy: "\n")

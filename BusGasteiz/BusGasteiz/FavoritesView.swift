@@ -45,7 +45,7 @@ struct FavoritesView: View {
         // Construye las listas de favoritos resueltos contra el GTFS
         let stopRows: [(stop: StopInfo, distance: Double)] = favorites.favoriteStopIds
             .compactMap { id in gtfs.stops[id].map { ($0, dist(for: $0)) } }
-            .sorted { $0.stop.name < $1.stop.name }
+            .sorted { $0.stop.localizedName < $1.stop.localizedName }
 
         let routeRows: [(key: FavoritesManager.ParsedRouteKey, stop: StopInfo, color: String)] =
             favorites.parsedRouteKeys.compactMap { key in
@@ -80,7 +80,7 @@ struct FavoritesView: View {
                         } label: {
                             FavoriteRouteRow(routeShortName: row.key.routeShortName,
                                             routeColor: row.color,
-                                            stopName: row.stop.name,
+                                            stopName: row.stop.localizedName,
                                             isTram: row.stop.isTram)
                         }
                     }
@@ -114,7 +114,7 @@ struct FavoriteStopRow: View {
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(stop.name)
+                Text(stop.localizedName)
                     .font(.body)
                 Text(distanceLabel(distance))
                     .font(.caption)
