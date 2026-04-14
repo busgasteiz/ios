@@ -171,8 +171,8 @@ struct StopRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            StopIconView(isTram: nearby.stop.isTram)
-                .frame(width: 36)
+            StopIconView(isTram: nearby.stop.isTram, size: 44)
+                .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(nearby.stop.name)

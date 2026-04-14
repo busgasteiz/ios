@@ -30,7 +30,7 @@ struct StopIconView: View {
 
             // Icono blanco
             Image(systemName: isTram ? "tram.fill" : "bus.fill")
-                .font(size >= 28 ? .caption : .system(size: size * 0.38))
+                .font(.system(size: size * 0.40))
                 .foregroundStyle(.white)
         }
     }
