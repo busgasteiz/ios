@@ -246,6 +246,7 @@ struct RouteArrivalsView: View {
     @Environment(FavoritesManager.self) private var favorites
 
     @State private var arrivals: [UpcomingArrival] = []
+    @State private var nextArrival: UpcomingArrival?
 
     var body: some View {
         Group {
@@ -257,6 +258,19 @@ struct RouteArrivalsView: View {
                         description: Text("No more arrivals of line \(routeShortName) in the next 60 minutes.")
                     )
                     .padding(.top, 60)
+
+                    if let next = nextArrival {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Next scheduled services")
+                                .font(.headline)
+                                .padding(.horizontal)
+                                .padding(.top, 24)
+                                .padding(.bottom, 8)
+
+                            ArrivalRowView(arrival: next)
+                                .padding(.horizontal)
+                        }
+                    }
                 }
                 .refreshable { await refreshAndRecompute() }
             } else {
@@ -315,7 +329,15 @@ struct RouteArrivalsView: View {
             let all = computeArrivals(stopId: sid, distance: dist,
                                       gtfsData: gtfs, delays: delays)
             let filtered = all.filter { $0.routeShortName == route }
-            await MainActor.run { arrivals = filtered }
+            let next = filtered.isEmpty
+                ? computeNextArrivals(stopId: sid, distance: dist,
+                                      gtfsData: gtfs, delays: delays)
+                    .first { $0.routeShortName == route }
+                : nil
+            await MainActor.run {
+                arrivals = filtered
+                nextArrival = next
+            }
         }
     }
 
