@@ -67,6 +67,7 @@ struct BusMapView: View {
         }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
+        .onChange(of: searchRadius) { centerOnUser() }
         .onAppear {
             centerOnUser()
             recompute()
