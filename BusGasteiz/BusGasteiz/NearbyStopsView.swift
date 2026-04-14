@@ -171,7 +171,7 @@ struct StopRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            StopIconView(isTram: nearby.stop.isTram, size: 44)
+            StopIconView(isTram: nearby.stop.isTram, size: 44, hasArrivals: nearby.hasArrivals)
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {

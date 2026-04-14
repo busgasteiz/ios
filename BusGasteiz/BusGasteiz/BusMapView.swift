@@ -25,7 +25,8 @@ struct BusMapView: View {
             ForEach(nearbyStops) { nearby in
                 Annotation(nearby.stop.localizedName, coordinate: nearby.stop.coordinate, anchor: .bottom) {
                     StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
-                                       isTram: nearby.stop.isTram)
+                                       isTram: nearby.stop.isTram,
+                                       hasArrivals: nearby.hasArrivals)
                 }
                 .tag(nearby.stop.id)
             }
@@ -216,11 +217,12 @@ struct BusMapView: View {
 struct StopAnnotationView: View {
     let isSelected: Bool
     var isTram: Bool = false
+    var hasArrivals: Bool = true
 
     private var size: CGFloat { isSelected ? 30 : 24 }
 
     var body: some View {
-        StopIconView(isTram: isTram, size: size)
+        StopIconView(isTram: isTram, size: size, hasArrivals: hasArrivals)
             .animation(.spring(duration: 0.2), value: isSelected)
     }
 }

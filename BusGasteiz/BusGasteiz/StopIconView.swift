@@ -14,6 +14,10 @@ struct StopIconView: View {
     var isTram: Bool = false
     /// Diámetro del círculo interior. El reborde añade 4 pt más.
     var size: CGFloat = 28
+    /// Si es false, el icono se muestra en gris (sin llegadas programadas).
+    var hasArrivals: Bool = true
+
+    private var fillColor: Color { hasArrivals ? Color.accentColor : Color(uiColor: .systemGray) }
 
     var body: some View {
         ZStack {
@@ -25,7 +29,7 @@ struct StopIconView: View {
 
             // Fondo de color sólido
             Circle()
-                .fill(Color.accentColor)
+                .fill(fillColor)
                 .frame(width: size, height: size)
 
             // Icono blanco

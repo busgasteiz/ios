@@ -93,5 +93,7 @@ struct UpcomingArrival: Identifiable, Sendable {
 struct NearbyStop: Identifiable, Sendable {
     let stop: StopInfo
     let distance: Double
+    /// Indica si la parada tiene al menos un horario en los datos GTFS.
+    let hasArrivals: Bool
     var id: String { stop.id }
 }

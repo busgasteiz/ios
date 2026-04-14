@@ -485,7 +485,9 @@ nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double, gt
     gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             let d = haversine(lat1: lat, lon1: lon, lat2: stop.lat, lon2: stop.lon)
-            return d <= radius ? NearbyStop(stop: stop, distance: d) : nil
+            guard d <= radius else { return nil }
+            let has = !(gtfsData.stopArrivals[stop.id]?.isEmpty ?? true)
+            return NearbyStop(stop: stop, distance: d, hasArrivals: has)
         }
         .sorted { $0.distance < $1.distance }
 }
@@ -502,7 +504,8 @@ nonisolated func computeStopsInBounds(
             guard stop.lat >= minLat && stop.lat <= maxLat &&
                   stop.lon >= minLon && stop.lon <= maxLon else { return nil }
             let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
-            return NearbyStop(stop: stop, distance: d)
+            let has = !(gtfsData.stopArrivals[stop.id]?.isEmpty ?? true)
+            return NearbyStop(stop: stop, distance: d, hasArrivals: has)
         }
         .sorted { $0.distance < $1.distance }
 }

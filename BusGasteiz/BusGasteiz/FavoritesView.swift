@@ -43,8 +43,12 @@ struct FavoritesView: View {
     @ViewBuilder
     private func favoritesList(gtfs: GTFSData) -> some View {
         // Construye las listas de favoritos resueltos contra el GTFS
-        let stopRows: [(stop: StopInfo, distance: Double)] = favorites.favoriteStopIds
-            .compactMap { id in gtfs.stops[id].map { ($0, dist(for: $0)) } }
+        let stopRows: [(stop: StopInfo, distance: Double, hasArrivals: Bool)] = favorites.favoriteStopIds
+            .compactMap { id in
+                gtfs.stops[id].map {
+                    ($0, dist(for: $0), !(gtfs.stopArrivals[id]?.isEmpty ?? true))
+                }
+            }
             .sorted { $0.stop.localizedName < $1.stop.localizedName }
 
         let routeRows: [(key: FavoritesManager.ParsedRouteKey, stop: StopInfo, color: String)] =
@@ -61,7 +65,7 @@ struct FavoritesView: View {
                         NavigationLink {
                             StopDetailView(stop: row.stop, distance: row.distance)
                         } label: {
-                            FavoriteStopRow(stop: row.stop, distance: row.distance)
+                            FavoriteStopRow(stop: row.stop, distance: row.distance, hasArrivals: row.hasArrivals)
                         }
                     }
                     .onDelete { indexSet in
@@ -107,10 +111,11 @@ struct FavoritesView: View {
 struct FavoriteStopRow: View {
     let stop: StopInfo
     let distance: Double
+    var hasArrivals: Bool = true
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            StopIconView(isTram: stop.isTram, size: 44)
+            StopIconView(isTram: stop.isTram, size: 44, hasArrivals: hasArrivals)
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
