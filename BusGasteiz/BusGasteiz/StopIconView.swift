@@ -1,0 +1,46 @@
+//
+//  StopIconView.swift
+//  BusGasteiz
+//
+
+import SwiftUI
+
+// MARK: - Icono circular de parada (lista y mapa)
+
+/// Icono circular con fondo sólido del color de acento, icono blanco y
+/// reborde blanco exterior para dar contraste contra cualquier fondo.
+/// Se usa tanto en las listas como en las anotaciones del mapa.
+struct StopIconView: View {
+    var isTram: Bool = false
+    /// Diámetro del círculo interior. El reborde añade 4 pt más.
+    var size: CGFloat = 28
+
+    var body: some View {
+        ZStack {
+            // Reborde blanco exterior
+            Circle()
+                .fill(Color.white)
+                .frame(width: size + 4, height: size + 4)
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+
+            // Fondo de color sólido
+            Circle()
+                .fill(Color.accentColor)
+                .frame(width: size, height: size)
+
+            // Icono blanco
+            Image(systemName: isTram ? "tram.fill" : "bus.fill")
+                .font(size >= 28 ? .caption : .system(size: size * 0.38))
+                .foregroundStyle(.white)
+        }
+    }
+}
+
+#Preview {
+    HStack(spacing: 16) {
+        StopIconView(isTram: false, size: 24)
+        StopIconView(isTram: true,  size: 28)
+        StopIconView(isTram: false, size: 32)
+    }
+    .padding()
+}

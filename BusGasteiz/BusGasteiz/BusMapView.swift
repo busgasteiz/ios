@@ -220,23 +220,7 @@ struct StopAnnotationView: View {
     private var size: CGFloat { isSelected ? 30 : 24 }
 
     var body: some View {
-        ZStack {
-            // Reborde blanco exterior
-            Circle()
-                .fill(Color.white)
-                .frame(width: size + 4, height: size + 4)
-                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-
-            // Fondo de color sólido
-            Circle()
-                .fill(isSelected ? Color.accentColor.opacity(0.85) : Color.accentColor)
-                .frame(width: size, height: size)
-
-            // Icono blanco
-            Image(systemName: isTram ? "tram.fill" : "bus.fill")
-                .font(isSelected ? .callout : .caption2)
-                .foregroundStyle(.white)
-        }
-        .animation(.spring(duration: 0.2), value: isSelected)
+        StopIconView(isTram: isTram, size: size)
+            .animation(.spring(duration: 0.2), value: isSelected)
     }
 }

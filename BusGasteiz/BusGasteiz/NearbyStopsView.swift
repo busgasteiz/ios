@@ -171,9 +171,7 @@ struct StopRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: nearby.stop.isTram ? "tram.fill" : "bus.fill")
-                .font(.title2)
-                .foregroundStyle(.tint)
+            StopIconView(isTram: nearby.stop.isTram)
                 .frame(width: 36)
 
             VStack(alignment: .leading, spacing: 2) {
