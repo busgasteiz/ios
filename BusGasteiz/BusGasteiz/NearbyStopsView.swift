@@ -69,7 +69,7 @@ struct NearbyStopsView: View {
                     // la animación de carga sea siempre visible al menos 1 segundo.
                     async let refresh: () = dataManager.forceRefresh()
                     async let minDelay: () = Task.sleep(for: .seconds(1))
-                    _ = await (try? refresh, try? minDelay)
+                    _ = await (refresh, try? minDelay)
                     recompute()
                 }
             }

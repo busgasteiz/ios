@@ -83,7 +83,7 @@ struct StopDetailView: View {
         // Descargar RT nuevo y recalcular; animación visible al menos 1 segundo.
         async let refresh: () = dataManager.forceRefresh()
         async let minDelay: () = Task.sleep(for: .seconds(1))
-        _ = await (try? refresh, try? minDelay)
+        _ = await (refresh, try? minDelay)
         recompute()
     }
 
@@ -283,7 +283,7 @@ struct RouteArrivalsView: View {
     private func refreshAndRecompute() async {
         async let refresh: () = dataManager.forceRefresh()
         async let minDelay: () = Task.sleep(for: .seconds(1))
-        _ = await (try? refresh, try? minDelay)
+        _ = await (refresh, try? minDelay)
         recompute()
     }
 
