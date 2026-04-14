@@ -40,11 +40,58 @@ struct StopIconView: View {
     }
 }
 
-#Preview {
+// MARK: - Badge cuadrado de línea (listas y favoritos)
+
+/// Badge cuadrado de 48 pt con borde blanco, igual que StopIconView.
+/// Muestra el número/nombre de línea centrado sobre el color de la ruta.
+struct RouteBadgeView: View {
+    let routeShortName: String
+    let colorHex: String
+
+    private let outer: CGFloat = 48
+    private let inner: CGFloat = 44
+    private let radius: CGFloat = 10
+
+    private var fillColor: Color { Color(hex: colorHex) }
+
+    private var textColor: Color {
+        let c = colorHex.lowercased()
+        if c.isEmpty || c == "ffffff" { return .black }
+        guard c.count == 6,
+              let r = UInt8(c.prefix(2), radix: 16),
+              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
+              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
+        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
+        return lum > 140 ? .black : .white
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: radius + 2)
+                .fill(Color.white)
+                .frame(width: outer, height: outer)
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+
+            RoundedRectangle(cornerRadius: radius)
+                .fill(fillColor)
+                .frame(width: inner, height: inner)
+
+            Text(routeShortName)
+                .font(.system(size: 15, weight: .bold))
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+                .foregroundStyle(textColor)
+                .frame(width: inner - 4)
+        }
+    }
+}
+
+#Preview("RouteBadgeView") {
     HStack(spacing: 16) {
-        StopIconView(isTram: false, size: 24)
-        StopIconView(isTram: true,  size: 28)
-        StopIconView(isTram: false, size: 32)
+        RouteBadgeView(routeShortName: "1",   colorHex: "E30613")
+        RouteBadgeView(routeShortName: "L1",  colorHex: "0057A8")
+        RouteBadgeView(routeShortName: "T1",  colorHex: "FFD700")
+        RouteBadgeView(routeShortName: "L2",  colorHex: "FFFFFF")
     }
     .padding()
 }

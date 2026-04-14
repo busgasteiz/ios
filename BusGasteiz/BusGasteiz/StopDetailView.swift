@@ -122,17 +122,9 @@ struct ArrivalRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Insignia de línea
-            Text(arrival.routeShortName)
-                .font(.headline)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .frame(minWidth: 44)
-                .background(routeColor)
-                .foregroundStyle(contrastColor)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            // Badge de línea cuadrado
+            RouteBadgeView(routeShortName: arrival.routeShortName, colorHex: arrival.routeColor)
+                .frame(width: 52)
 
             // Destino y datos RT
             VStack(alignment: .leading, spacing: 2) {
@@ -186,22 +178,6 @@ struct ArrivalRowView: View {
         let a = abs(Int(arrival.delaySecs))
         let sign = arrival.delaySecs > 0 ? "+" : "-"
         return a < 60 ? "\(sign)\(a)s" : String(format: "%@%dm%02ds", sign, a / 60, a % 60)
-    }
-
-    private var routeColor: Color {
-        Color(hex: arrival.routeColor)
-    }
-
-    private var contrastColor: Color {
-        // Luminancia aproximada para decidir texto blanco o negro
-        let c = arrival.routeColor.lowercased()
-        if c.isEmpty || c == "ffffff" { return .black }
-        guard c.count == 6,
-              let r = UInt8(c.prefix(2), radix: 16),
-              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
-              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
-        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
-        return lum > 140 ? .black : .white
     }
 }
 

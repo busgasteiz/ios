@@ -146,17 +146,9 @@ struct FavoriteRouteRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Insignia de línea
-            Text(routeShortName)
-                .font(.headline)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .frame(minWidth: 44)
-                .background(Color(hex: routeColor))
-                .foregroundStyle(contrastColor)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            // Badge de línea cuadrado
+            RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor)
+                .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(stopName)
@@ -167,16 +159,5 @@ struct FavoriteRouteRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-
-    private var contrastColor: Color {
-        let c = routeColor.lowercased()
-        if c.isEmpty || c == "ffffff" { return .black }
-        guard c.count == 6,
-              let r = UInt8(c.prefix(2), radix: 16),
-              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
-              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
-        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
-        return lum > 140 ? .black : .white
     }
 }
