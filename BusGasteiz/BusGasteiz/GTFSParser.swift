@@ -287,8 +287,36 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
         }
     }
 
-    // 3. stop_times.txt — filtrar a viajes de tranvía y recopilar IDs de paradas
-    var tramStopIds = Set<String>()
+    // 2b. stops.txt — mapa Quay → StopPlace (parent_station) para agrupar andenes
+    //     Cada parada física tiene dos Quays (un andén por sentido) con las mismas
+    //     coordenadas. Agrupamos por StopPlace para evitar duplicados en el mapa
+    //     y mostrar los tranvías de ambas direcciones en la misma entrada.
+    var quayToStopPlace: [String: String] = [:]  // quay_id → stopPlace_id
+    var stopPlaceInfo: [String: (name: String, lat: Double, lon: Double)] = [:]
+    if let raw = try? String(contentsOfFile: "\(folder)/stops.txt", encoding: .utf8) {
+        var lines = raw.components(separatedBy: "\n")
+        let h = splitCSV(lines.removeFirst())
+        let iId  = localIdx(h, "stop_id"),    iNm  = localIdx(h, "stop_name")
+        let iLat = localIdx(h, "stop_lat"),   iLon = localIdx(h, "stop_lon")
+        let iLt  = localIdx(h, "location_type"), iPa = localIdx(h, "parent_station")
+        for ln in lines {
+            let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
+            let r = splitCSV(t); let id = localGet(r, iId); guard !id.isEmpty else { continue }
+            let locType = localGet(r, iLt)
+            if locType == "1" {
+                // StopPlace: guardar sus datos para usarlos como parada canónica
+                let lat = Double(localGet(r, iLat)) ?? 0.0
+                let lon = Double(localGet(r, iLon)) ?? 0.0
+                stopPlaceInfo[id] = (name: localGet(r, iNm), lat: lat, lon: lon)
+            } else if locType == "0" {
+                // Quay (andén): apuntar a su StopPlace padre
+                let parent = localGet(r, iPa)
+                if !parent.isEmpty { quayToStopPlace[id] = parent }
+            }
+        }
+    }
+
+    // 3. stop_times.txt — filtrar a viajes de tranvía; traducir Quay → StopPlace
     if let raw = try? String(contentsOfFile: "\(folder)/stop_times.txt", encoding: .utf8) {
         var lines = raw.components(separatedBy: "\n")
         let h = splitCSV(lines.removeFirst())
@@ -298,9 +326,10 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
         for ln in lines {
             let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
             let r = splitCSV(t)
-            let tid = localGet(r, iTr), sid = localGet(r, iSt)
-            guard !tid.isEmpty, !sid.isEmpty, tramTripIds.contains(tid) else { continue }
-            tramStopIds.insert(sid)
+            let tid = localGet(r, iTr), quayId = localGet(r, iSt)
+            guard !tid.isEmpty, !quayId.isEmpty, tramTripIds.contains(tid) else { continue }
+            // Resolver al StopPlace padre para agrupar andenes del mismo apeadero
+            let sid = quayToStopPlace[quayId] ?? quayId
             var secs = parseSecs(localGet(r, iAr))
             if secs < 0 { secs = parseSecs(localGet(r, iDp)) }
             guard secs >= 0 else { continue }
@@ -311,20 +340,13 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
         }
     }
 
-    // 4. stops.txt — solo las paradas usadas por el tranvía
-    if let raw = try? String(contentsOfFile: "\(folder)/stops.txt", encoding: .utf8) {
-        var lines = raw.components(separatedBy: "\n")
-        let h = splitCSV(lines.removeFirst())
-        let iId = localIdx(h, "stop_id"), iNm = localIdx(h, "stop_name")
-        let iLat = localIdx(h, "stop_lat"), iLon = localIdx(h, "stop_lon")
-        for ln in lines {
-            let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
-            let r = splitCSV(t); let id = localGet(r, iId)
-            guard !id.isEmpty, tramStopIds.contains(id) else { continue }
-            g.stops[id] = StopInfo(id: id, name: localGet(r, iNm),
-                                   lat: Double(localGet(r, iLat)) ?? 0.0,
-                                   lon: Double(localGet(r, iLon)) ?? 0.0,
-                                   isTram: true)
+    // 4. stops — crear una entrada por StopPlace que tenga stop_times
+    let usedStopPlaceIds = Set(g.stopArrivals.keys)
+    for spId in usedStopPlaceIds {
+        if let info = stopPlaceInfo[spId] {
+            g.stops[spId] = StopInfo(id: spId, name: info.name,
+                                     lat: info.lat, lon: info.lon,
+                                     isTram: true)
         }
     }
 
