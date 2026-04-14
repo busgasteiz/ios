@@ -1,0 +1,178 @@
+import SwiftUI
+import CoreLocation
+
+// MARK: - Pestaña de favoritos
+
+struct FavoritesView: View {
+
+    @Environment(DataManager.self)      private var dataManager
+    @Environment(LocationManager.self)  private var locationManager
+    @Environment(FavoritesManager.self) private var favorites
+
+    var body: some View {
+        Group {
+            if favorites.isEmpty {
+                emptyView
+            } else if let gtfs = dataManager.gtfsData {
+                favoritesList(gtfs: gtfs)
+            } else {
+                loadingView
+            }
+        }
+        .navigationTitle("Favoritos")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    // MARK: Subvistas
+
+    private var emptyView: some View {
+        ContentUnavailableView(
+            "Sin favoritos",
+            systemImage: "star",
+            description: Text("Toca la estrella en una parada o línea para guardarla aquí.")
+        )
+    }
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView().scaleEffect(1.5)
+            Text("Cargando datos…").foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func favoritesList(gtfs: GTFSData) -> some View {
+        // Construye las listas de favoritos resueltos contra el GTFS
+        let stopRows: [(stop: StopInfo, distance: Double)] = favorites.favoriteStopIds
+            .compactMap { id in gtfs.stops[id].map { ($0, dist(for: $0)) } }
+            .sorted { $0.stop.name < $1.stop.name }
+
+        let routeRows: [(key: FavoritesManager.ParsedRouteKey, stop: StopInfo, color: String)] =
+            favorites.parsedRouteKeys.compactMap { key in
+                guard let stop = gtfs.stops[key.stopId] else { return nil }
+                let color = gtfs.routes.values.first { $0.shortName == key.routeShortName }?.color ?? ""
+                return (key, stop, color)
+            }
+
+        List {
+            if !stopRows.isEmpty {
+                Section("Paradas") {
+                    ForEach(stopRows, id: \.stop.id) { row in
+                        NavigationLink {
+                            StopDetailView(stop: row.stop, distance: row.distance)
+                        } label: {
+                            FavoriteStopRow(stop: row.stop, distance: row.distance)
+                        }
+                    }
+                    .onDelete { indexSet in
+                        for idx in indexSet { favorites.toggleStop(stopRows[idx].stop.id) }
+                    }
+                }
+            }
+
+            if !routeRows.isEmpty {
+                Section("Líneas") {
+                    ForEach(routeRows, id: \.key.id) { row in
+                        NavigationLink {
+                            RouteArrivalsView(stop: row.stop, distance: dist(for: row.stop),
+                                             routeShortName: row.key.routeShortName,
+                                             routeColor: row.color)
+                        } label: {
+                            FavoriteRouteRow(routeShortName: row.key.routeShortName,
+                                            routeColor: row.color,
+                                            stopName: row.stop.name,
+                                            isTram: row.stop.isTram)
+                        }
+                    }
+                    .onDelete { indexSet in
+                        for idx in indexSet {
+                            let key = routeRows[idx].key
+                            favorites.toggleRoute(stopId: key.stopId, routeShortName: key.routeShortName)
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+
+    private func dist(for stop: StopInfo) -> Double {
+        guard let loc = locationManager.location else { return 0 }
+        return CLLocation(latitude: stop.lat, longitude: stop.lon).distance(from: loc)
+    }
+}
+
+// MARK: - Fila de parada favorita
+
+struct FavoriteStopRow: View {
+    let stop: StopInfo
+    let distance: Double
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: stop.isTram ? "tram.fill" : "bus.fill")
+                .font(.title2)
+                .foregroundStyle(.tint)
+                .frame(width: 36)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stop.name)
+                    .font(.body)
+                Text(distanceLabel(distance))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func distanceLabel(_ d: Double) -> String {
+        d == 0 ? "Parada favorita" :
+        d < 1000 ? "\(Int(d.rounded())) m" : String(format: "%.1f km", d / 1000)
+    }
+}
+
+// MARK: - Fila de línea-en-parada favorita
+
+struct FavoriteRouteRow: View {
+    let routeShortName: String
+    let routeColor: String
+    let stopName: String
+    let isTram: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Insignia de línea
+            Text(routeShortName)
+                .font(.headline)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .frame(minWidth: 44)
+                .background(Color(hex: routeColor))
+                .foregroundStyle(contrastColor)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stopName)
+                    .font(.body)
+                Text(isTram ? "Tranvía" : "Autobús")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var contrastColor: Color {
+        let c = routeColor.lowercased()
+        if c.isEmpty || c == "ffffff" { return .black }
+        guard c.count == 6,
+              let r = UInt8(c.prefix(2), radix: 16),
+              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
+              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
+        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
+        return lum > 140 ? .black : .white
+    }
+}

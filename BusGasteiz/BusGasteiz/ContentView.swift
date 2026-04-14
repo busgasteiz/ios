@@ -23,6 +23,13 @@ struct ContentView: View {
             .tabItem {
                 Label("Mapa", systemImage: "map")
             }
+
+            NavigationStack {
+                FavoritesView()
+            }
+            .tabItem {
+                Label("Favoritos", systemImage: "star")
+            }
         }
     }
 }
@@ -31,4 +38,5 @@ struct ContentView: View {
     ContentView()
         .environment(DataManager.shared)
         .environment(LocationManager())
+        .environment(FavoritesManager())
 }

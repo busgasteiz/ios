@@ -167,6 +167,7 @@ struct NearbyStopsView: View {
 
 struct StopRowView: View {
     let nearby: NearbyStop
+    @Environment(FavoritesManager.self) private var favorites
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -183,6 +184,17 @@ struct StopRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Spacer()
+
+            Button {
+                favorites.toggleStop(nearby.stop.id)
+            } label: {
+                Image(systemName: favorites.isStopFavorite(nearby.stop.id) ? "star.fill" : "star")
+                    .foregroundStyle(favorites.isStopFavorite(nearby.stop.id) ? .yellow : .secondary)
+                    .animation(.spring(duration: 0.2), value: favorites.isStopFavorite(nearby.stop.id))
+            }
+            .buttonStyle(.borderless)
         }
         .padding(.vertical, 4)
     }

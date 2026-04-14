@@ -8,7 +8,8 @@ struct StopDetailView: View {
     let stop: StopInfo
     let distance: Double
 
-    @Environment(DataManager.self) private var dataManager
+    @Environment(DataManager.self)      private var dataManager
+    @Environment(FavoritesManager.self) private var favorites
 
     @State private var arrivals: [UpcomingArrival] = []
     @State private var lastUpdate: Date?
@@ -34,6 +35,18 @@ struct StopDetailView: View {
                     } label: {
                         ArrivalRowView(arrival: arrival)
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        let isFav = favorites.isRouteFavorite(stopId: stop.id,
+                                                              routeShortName: arrival.routeShortName)
+                        Button {
+                            favorites.toggleRoute(stopId: stop.id,
+                                                  routeShortName: arrival.routeShortName)
+                        } label: {
+                            Label(isFav ? "Quitar" : "Favorito",
+                                  systemImage: isFav ? "star.slash.fill" : "star.fill")
+                        }
+                        .tint(isFav ? .gray : .yellow)
+                    }
                 }
                 .listStyle(.plain)
                 .refreshable { await refreshAndRecompute() }
@@ -49,6 +62,16 @@ struct StopDetailView: View {
                     Text(distanceLabel(distance))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                let isFav = favorites.isStopFavorite(stop.id)
+                Button {
+                    favorites.toggleStop(stop.id)
+                } label: {
+                    Image(systemName: isFav ? "star.fill" : "star")
+                        .foregroundStyle(isFav ? .yellow : .primary)
+                        .animation(.spring(duration: 0.2), value: isFav)
                 }
             }
         }
@@ -201,7 +224,8 @@ struct RouteArrivalsView: View {
     let routeShortName: String
     let routeColor: String
 
-    @Environment(DataManager.self) private var dataManager
+    @Environment(DataManager.self)      private var dataManager
+    @Environment(FavoritesManager.self) private var favorites
 
     @State private var arrivals: [UpcomingArrival] = []
 
@@ -239,6 +263,16 @@ struct RouteArrivalsView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     Text(stop.name)
                         .font(.headline)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                let isFav = favorites.isRouteFavorite(stopId: stop.id, routeShortName: routeShortName)
+                Button {
+                    favorites.toggleRoute(stopId: stop.id, routeShortName: routeShortName)
+                } label: {
+                    Image(systemName: isFav ? "star.fill" : "star")
+                        .foregroundStyle(isFav ? .yellow : .primary)
+                        .animation(.spring(duration: 0.2), value: isFav)
                 }
             }
         }
