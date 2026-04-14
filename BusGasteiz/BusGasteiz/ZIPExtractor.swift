@@ -1,5 +1,4 @@
 import Foundation
-import Compression
 
 // MARK: - Extractor ZIP mínimo
 
@@ -132,29 +131,34 @@ struct ZIPExtractor {
         return entries
     }
 
-    // MARK: - Descompresión DEFLATE (raw) mediante Compression framework
+    // MARK: - Descompresión DEFLATE (raw) mediante libz
 
     private nonisolated static func deflateDecompress(data: Data, uncompressedSize: Int) throws -> Data {
-        guard uncompressedSize > 0 else { return Data() }
-        // COMPRESSION_DEFLATE = 0x500 (raw DEFLATE, sin cabecera zlib ni gzip)
-        let algorithm = compression_algorithm(0x500)
-        let bufferSize = max(uncompressedSize, data.count * 4)
-        var result = Data(count: bufferSize)
+        guard !data.isEmpty else { return Data() }
 
-        let decompressedSize: Int = result.withUnsafeMutableBytes { destPtr in
-            data.withUnsafeBytes { srcPtr in
-                compression_decode_buffer(
-                    destPtr.bindMemory(to: UInt8.self).baseAddress!,
-                    bufferSize,
-                    srcPtr.bindMemory(to: UInt8.self).baseAddress!,
-                    data.count,
-                    nil,
-                    algorithm
-                )
+        // Usar inflateInit2 con -15 = raw DEFLATE (sin cabecera zlib ni gzip).
+        // ZIP usa DEFLATE puro, por eso el framework de Apple (COMPRESSION_ZLIB)
+        // no sirve directamente ya que espera una cabecera zlib de 2 bytes.
+        var stream = z_stream()
+        let initRC = inflateInit2_(&stream, -15, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
+        guard initRC == Z_OK else { throw ZIPExtractorError.decompressionFailed }
+        defer { inflateEnd(&stream) }
+
+        // Buffer de salida: usar uncompressedSize si es válido, sino estimación conservadora.
+        let bufSize = uncompressedSize > 0 ? uncompressedSize : data.count * 6
+        var result = Data(count: bufSize)
+
+        let rc: Int32 = data.withUnsafeBytes { srcPtr in
+            result.withUnsafeMutableBytes { dstPtr in
+                stream.next_in  = UnsafeMutablePointer(mutating: srcPtr.bindMemory(to: Bytef.self).baseAddress!)
+                stream.avail_in = uInt(data.count)
+                stream.next_out = dstPtr.bindMemory(to: Bytef.self).baseAddress!
+                stream.avail_out = uInt(bufSize)
+                return inflate(&stream, Z_FINISH)
             }
         }
-        guard decompressedSize > 0 else { throw ZIPExtractorError.decompressionFailed }
-        result.count = decompressedSize
+        guard rc == Z_STREAM_END else { throw ZIPExtractorError.decompressionFailed }
+        result.count = bufSize - Int(stream.avail_out)
         return result
     }
 }
