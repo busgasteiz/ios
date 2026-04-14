@@ -64,20 +64,25 @@ final class DataManager {
     private func performRefresh() async {
         if case .loading = loadState { return }
 
+        // Si no hay datos aún, mostrar spinner de carga completo.
+        // Si ya hay datos, mantenemos .ready para no destruir la vista activa
+        // (destruirla cancela el task del .refreshable y corta la descarga).
+        let hasData = gtfsData != nil
+
         do {
             print("[DataManager] Iniciando refresco…")
             try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
             // Datos GTFS estáticos: descargar solo si no están frescos
             if !isGTFSFresh() {
-                loadState = .loading("Descargando datos GTFS…")
+                if !hasData { loadState = .loading("Descargando datos GTFS…") }
                 print("[DataManager] Descargando GTFS ZIP…")
                 let zipData = try await downloadData(
                     from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/google_transit.zip"
                 )
                 print("[DataManager] ZIP descargado: \(zipData.count) bytes")
 
-                loadState = .loading("Descomprimiendo datos GTFS…")
+                if !hasData { loadState = .loading("Descomprimiendo datos GTFS…") }
                 try await extractGTFS(zipData: zipData)
                 print("[DataManager] ZIP descomprimido")
             } else {
@@ -85,7 +90,7 @@ final class DataManager {
             }
 
             // Feed RT: siempre actualizar
-            loadState = .loading("Descargando datos en tiempo real…")
+            if !hasData { loadState = .loading("Descargando datos en tiempo real…") }
             print("[DataManager] Descargando feed RT…")
             let pbData = try await downloadData(
                 from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
@@ -94,7 +99,7 @@ final class DataManager {
             try pbData.write(to: pbURL)
 
             // Parsear en background
-            loadState = .loading("Procesando datos…")
+            if !hasData { loadState = .loading("Procesando datos…") }
             let (parsed, delays) = await parseInBackground()
             print("[DataManager] Datos parseados: \(parsed.stops.count) paradas, \(delays.count) trips RT")
 

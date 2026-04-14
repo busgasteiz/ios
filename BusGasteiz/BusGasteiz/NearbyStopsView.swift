@@ -11,7 +11,6 @@ struct NearbyStopsView: View {
     @AppStorage("searchRadius") private var searchRadius: Double = 200
 
     @State private var nearbyStops: [NearbyStop] = []
-    @State private var isRefreshing = false
 
     var body: some View {
         Group {
@@ -62,10 +61,12 @@ struct NearbyStopsView: View {
                 }
                 .listStyle(.plain)
                 .refreshable {
-                    isRefreshing = true
-                    await dataManager.forceRefresh()
+                    // Ejecutar refresco y espera mínima en paralelo para que
+                    // la animación de carga sea siempre visible al menos 1 segundo.
+                    async let refresh: () = dataManager.forceRefresh()
+                    async let minDelay: () = Task.sleep(for: .seconds(1))
+                    _ = await (try? refresh, try? minDelay)
                     recompute()
-                    isRefreshing = false
                 }
             }
         }
