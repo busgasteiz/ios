@@ -1,43 +1,61 @@
-//
-//  BusGasteizUITests.swift
-//  BusGasteizUITests
-//
-//  Created by Ion Jaureguialzo Sarasola on 14/04/2026.
-//
-
 import XCTest
 
 final class BusGasteizUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
+    /// Verifica que la app sale del estado "Iniciando…" y muestra la lista de paradas
+    /// (o el estado vacío si no hay paradas cercanas) en un tiempo razonable.
+    /// Detecta el bug de iOS 16 donde la UI se quedaba bloqueada en la carga inicial.
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testNearbyStopsListLoads() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
-    }
-
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+        // Aceptar el diálogo de permisos de localización si aparece
+        let alert = app.alerts.firstMatch
+        if alert.waitForExistence(timeout: 5) {
+            // Buscar botón de "Allow" en inglés o español
+            var tapped = false
+            for i in 0..<alert.buttons.count {
+                let btn = alert.buttons.element(boundBy: i)
+                let label = btn.label.lowercased()
+                if label.contains("allow") || label.contains("permit") || label.contains("usar") {
+                    btn.tap()
+                    tapped = true
+                    break
+                }
+            }
+            if !tapped {
+                alert.buttons.element(boundBy: alert.buttons.count - 1).tap()
+            }
         }
+
+        // Esperar hasta 90 s a que aparezca la tabla con paradas O el estado vacío.
+        // Cualquiera de los dos indica que la carga se completó correctamente.
+        let table       = app.tables.firstMatch
+        let emptyLabel  = app.staticTexts["Sin paradas cercanas"]
+        let errorButton = app.buttons["Reintentar"]
+
+        let loaded = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                table.exists || emptyLabel.exists || errorButton.exists
+            },
+            object: nil
+        )
+        let waiter = XCTWaiter.wait(for: [loaded], timeout: 180)
+
+        // El texto "Iniciando…" no debe seguir visible al terminar la espera
+        XCTAssertFalse(
+            app.staticTexts["Iniciando…"].exists,
+            "La app sigue bloqueada en 'Iniciando…' — el observador de @EnvironmentObject no recibió la notificación"
+        )
+
+        XCTAssertEqual(
+            waiter, .completed,
+            "La lista de paradas (o el estado vacío/error) debe aparecer en 90 s"
+        )
     }
 }
