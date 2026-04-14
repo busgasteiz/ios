@@ -24,13 +24,13 @@ struct StopDetailView: View {
                     )
                     .padding(.top, 60)
                 }
-                .refreshable { recompute() }
+                .refreshable { await refreshAndRecompute() }
             } else {
                 List(arrivals) { arrival in
                     ArrivalRowView(arrival: arrival)
                 }
                 .listStyle(.plain)
-                .refreshable { recompute() }
+                .refreshable { await refreshAndRecompute() }
             }
         }
         .navigationTitle(stop.name)
@@ -48,6 +48,14 @@ struct StopDetailView: View {
         }
         .onAppear { recompute() }
         .onChange(of: dataManager.version) { recompute() }
+    }
+
+    private func refreshAndRecompute() async {
+        // Descargar RT nuevo y recalcular; animación visible al menos 1 segundo.
+        async let refresh: () = dataManager.forceRefresh()
+        async let minDelay: () = Task.sleep(for: .seconds(1))
+        _ = await (try? refresh, try? minDelay)
+        recompute()
     }
 
     private func recompute() {
