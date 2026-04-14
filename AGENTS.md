@@ -38,7 +38,7 @@ ios/
 | Lenguaje                | Swift                          |
 | Framework UI            | SwiftUI                        |
 | Observación de estado   | `@Observable` (Swift 5.9)      |
-| iOS mínimo              | 15.0                           |
+| iOS mínimo              | 17.0                           |
 | Mapas                   | MapKit (`Map`, `Annotation`)   |
 | Localización            | `String(localized:)` + `.xcstrings` |
 | Persistencia favoritos  | `UserDefaults`                 |
@@ -196,13 +196,6 @@ Badge cuadrado de 48 pt (44 pt interior + 2 pt reborde):
 - Todos los strings visibles al usuario deben estar en `Localizable.xcstrings`.
 - Usar `String(localized: "Key")` o `Text("Key")` (SwiftUI lo resuelve automáticamente).
 - Los nombres de paradas tienen versión en euskera (`nameEu`) y castellano (`nameEs`) según `translations.txt` de Tuvisa. `StopInfo.localizedName` los selecciona automáticamente.
-
----
-
-## Compatibilidad iOS 16
-
-`@Observable` requiere iOS 17, pero el target mínimo es iOS 15. Workaround en `DataManager`:
-- Usa `notifyViewsOnRunLoop()` y `.onReceive` con Combine para que SwiftUI observe cambios en iOS 16, donde el executor de `@MainActor` no está integrado con `RunLoop.main`.
 
 ---
 
