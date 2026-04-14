@@ -217,16 +217,25 @@ struct StopAnnotationView: View {
     let isSelected: Bool
     var isTram: Bool = false
 
+    private var size: CGFloat { isSelected ? 30 : 24 }
+
     var body: some View {
         ZStack {
+            // Reborde blanco exterior
             Circle()
-                .fill(isSelected ? Color.accentColor : Color.white)
-                .frame(width: isSelected ? 28 : 22, height: isSelected ? 28 : 22)
-                .shadow(radius: 3)
+                .fill(Color.white)
+                .frame(width: size + 4, height: size + 4)
+                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
 
+            // Fondo de color sólido
+            Circle()
+                .fill(isSelected ? Color.accentColor.opacity(0.85) : Color.accentColor)
+                .frame(width: size, height: size)
+
+            // Icono blanco
             Image(systemName: isTram ? "tram.fill" : "bus.fill")
                 .font(isSelected ? .callout : .caption2)
-                .foregroundStyle(isSelected ? .white : .accentColor)
+                .foregroundStyle(.white)
         }
         .animation(.spring(duration: 0.2), value: isSelected)
     }
