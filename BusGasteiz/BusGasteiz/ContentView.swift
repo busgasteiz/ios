@@ -9,16 +9,26 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            NavigationStack {
+                NearbyStopsView()
+            }
+            .tabItem {
+                Label("Paradas", systemImage: "list.bullet")
+            }
+
+            NavigationStack {
+                BusMapView()
+            }
+            .tabItem {
+                Label("Mapa", systemImage: "map")
+            }
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .environment(DataManager.shared)
+        .environment(LocationManager())
 }

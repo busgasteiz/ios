@@ -1,0 +1,178 @@
+import SwiftUI
+
+// MARK: - Detalle de parada: llegadas previstas
+
+struct StopDetailView: View {
+
+    let stop: StopInfo
+    let distance: Double
+
+    @Environment(DataManager.self) private var dataManager
+
+    @State private var arrivals: [UpcomingArrival] = []
+    @State private var lastUpdate: Date?
+
+    var body: some View {
+        Group {
+            if arrivals.isEmpty {
+                ScrollView {
+                    ContentUnavailableView(
+                        "Sin llegadas",
+                        systemImage: "clock",
+                        description: Text("No hay llegadas previstas en los próximos 60 minutos.")
+                    )
+                    .padding(.top, 60)
+                }
+                .refreshable { recompute() }
+            } else {
+                List(arrivals) { arrival in
+                    ArrivalRowView(arrival: arrival)
+                }
+                .listStyle(.plain)
+                .refreshable { recompute() }
+            }
+        }
+        .navigationTitle(stop.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
+                    Text(stop.name)
+                        .font(.headline)
+                    Text(distanceLabel(distance))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .onAppear { recompute() }
+        .onChange(of: dataManager.version) { recompute() }
+    }
+
+    private func recompute() {
+        guard let gtfs = dataManager.gtfsData else { return }
+        let sid = stop.id
+        let dist = distance
+        let delays = dataManager.tripDelays
+        Task.detached(priority: .userInitiated) {
+            let result = computeArrivals(stopId: sid, distance: dist,
+                                         gtfsData: gtfs, delays: delays)
+            await MainActor.run {
+                arrivals = result
+                lastUpdate = Date()
+            }
+        }
+    }
+
+    private func distanceLabel(_ d: Double) -> String {
+        d < 1000 ? "\(Int(d.rounded())) m" : String(format: "%.1f km", d / 1000)
+    }
+}
+
+// MARK: - Fila de llegada
+
+struct ArrivalRowView: View {
+    let arrival: UpcomingArrival
+    @State private var now = Date()
+
+    private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Insignia de línea
+            Text(arrival.routeShortName)
+                .font(.headline)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .frame(minWidth: 44)
+                .background(routeColor)
+                .foregroundStyle(contrastColor)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            // Destino y datos RT
+            VStack(alignment: .leading, spacing: 2) {
+                Text(arrival.headsign)
+                    .font(.body)
+                    .lineLimit(1)
+
+                if arrival.isRealTime {
+                    if arrival.delaySecs != 0 {
+                        Text("Prog. \(formatTime(arrival.scheduledTime))  •  \(delayText)")
+                            .font(.caption)
+                            .foregroundStyle(arrival.delaySecs > 0 ? .red : .green)
+                    } else {
+                        Label("Tiempo real", systemImage: "antenna.radiowaves.left.and.right")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                } else {
+                    Label("Horario previsto", systemImage: "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Tiempo restante
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(timeLabel)
+                    .font(.headline)
+                    .monospacedDigit()
+                Text(formatTime(arrival.predictedTime))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .onReceive(timer) { now = $0 }
+    }
+
+    private var timeLabel: String {
+        let mins = minutesUntil(arrival.predictedTime, from: now)
+        switch mins {
+        case ..<1:  return "Ahora"
+        case 1:     return "1 min"
+        default:    return "\(mins) min"
+        }
+    }
+
+    private var delayText: String {
+        let a = abs(Int(arrival.delaySecs))
+        let sign = arrival.delaySecs > 0 ? "+" : "-"
+        return a < 60 ? "\(sign)\(a)s" : String(format: "%@%dm%02ds", sign, a / 60, a % 60)
+    }
+
+    private var routeColor: Color {
+        Color(hex: arrival.routeColor)
+    }
+
+    private var contrastColor: Color {
+        // Luminancia aproximada para decidir texto blanco o negro
+        let c = arrival.routeColor.lowercased()
+        if c.isEmpty || c == "ffffff" { return .black }
+        guard c.count == 6,
+              let r = UInt8(c.prefix(2), radix: 16),
+              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
+              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
+        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
+        return lum > 140 ? .black : .white
+    }
+}
+
+// MARK: - Extensión Color desde hex
+
+extension Color {
+    init(hex: String) {
+        let h = hex.trimmingCharacters(in: .alphanumerics.inverted)
+        guard h.count == 6, let value = UInt64(h, radix: 16) else {
+            self = .accentColor; return
+        }
+        let r = Double((value >> 16) & 0xFF) / 255
+        let g = Double((value >> 8)  & 0xFF) / 255
+        let b = Double( value        & 0xFF) / 255
+        self.init(red: r, green: g, blue: b)
+    }
+}

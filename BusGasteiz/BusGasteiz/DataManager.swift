@@ -1,0 +1,172 @@
+import Foundation
+import Observation
+
+// MARK: - DataManager
+
+@Observable @MainActor
+final class DataManager {
+
+    // MARK: Estado de carga
+
+    enum LoadState: Equatable {
+        case idle
+        case loading(String)
+        case ready
+        case failed(String)
+    }
+
+    static let shared = DataManager()
+
+    var loadState: LoadState = .idle
+    var gtfsData: GTFSData?
+    var tripDelays: [String: TripDelayInfo] = [:]
+    var lastRefresh: Date?
+    /// Se incrementa con cada recarga; útil para `onChange` en vistas.
+    private(set) var version: Int = 0
+
+    private let maxAge: TimeInterval = 10 * 60   // 10 minutos
+
+    // MARK: Rutas de caché
+
+    private var cacheDir: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("GTFSCache")
+    }
+
+    private var gtfsDir: URL { cacheDir.appendingPathComponent("GTFS_Data") }
+    private var pbURL: URL { cacheDir.appendingPathComponent("tripUpdates.pb") }
+
+    // MARK: Init
+
+    init() {
+        let modDate = (try? FileManager.default.attributesOfItem(atPath: pbURL.path))?[.modificationDate] as? Date
+        lastRefresh = modDate
+    }
+
+    // MARK: API pública
+
+    var needsRefresh: Bool {
+        guard let last = lastRefresh else { return true }
+        return Date().timeIntervalSince(last) > maxAge
+    }
+
+    func refreshIfNeeded() async {
+        guard needsRefresh || gtfsData == nil else { return }
+        await performRefresh()
+    }
+
+    func forceRefresh() async {
+        await performRefresh()
+    }
+
+    // MARK: Lógica interna
+
+    private func performRefresh() async {
+        if case .loading = loadState { return }
+
+        do {
+            try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+
+            // Datos GTFS estáticos: descargar solo si no están frescos
+            if !isGTFSFresh() {
+                loadState = .loading("Descargando datos GTFS…")
+                let zipData = try await downloadData(
+                    from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/google_transit.zip"
+                )
+
+                loadState = .loading("Descomprimiendo datos GTFS…")
+                try await extractGTFS(zipData: zipData)
+            }
+
+            // Feed RT: siempre actualizar
+            loadState = .loading("Descargando datos en tiempo real…")
+            let pbData = try await downloadData(
+                from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
+            )
+            try pbData.write(to: pbURL)
+
+            // Parsear en background
+            loadState = .loading("Procesando datos…")
+            let (parsed, delays) = try await parseInBackground()
+
+            gtfsData = parsed
+            tripDelays = delays
+            lastRefresh = Date()
+            version += 1
+            loadState = .ready
+
+        } catch {
+            // Si ya hay datos cargados, mantenerlos y solo marcar el error de refresh
+            if gtfsData != nil {
+                loadState = .ready
+            } else {
+                // Intentar cargar desde caché existente aunque sea antigua
+                if let cached = await tryLoadFromCache() {
+                    gtfsData = cached.gtfs
+                    tripDelays = cached.delays
+                    version += 1
+                    loadState = .ready
+                } else {
+                    loadState = .failed(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func isGTFSFresh() -> Bool {
+        let stopsFile = gtfsDir.appendingPathComponent("stops.txt")
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: stopsFile.path),
+              let mod = attrs[.modificationDate] as? Date else { return false }
+        return Date().timeIntervalSince(mod) < maxAge
+    }
+
+    private func downloadData(from urlString: String) async throws -> Data {
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return data
+    }
+
+    private func extractGTFS(zipData: Data) async throws {
+        let targetDir = gtfsDir
+        try await Task.detached(priority: .userInitiated) {
+            if FileManager.default.fileExists(atPath: targetDir.path) {
+                try FileManager.default.removeItem(at: targetDir)
+            }
+            try ZIPExtractor.extract(zipData: zipData, to: targetDir)
+        }.value
+    }
+
+    private func parseInBackground() async throws -> (GTFSData, [String: TripDelayInfo]) {
+        let folder = gtfsDir.path
+        let pbPath = pbURL.path
+        return try await Task.detached(priority: .userInitiated) {
+            let gtfs = loadGTFS(folder: folder)
+            guard let pbData = FileManager.default.contents(atPath: pbPath) else {
+                return (gtfs, [:])
+            }
+            let delays = loadTripDelays(data: pbData)
+            return (gtfs, delays)
+        }.value
+    }
+
+    private func tryLoadFromCache() async -> (gtfs: GTFSData, delays: [String: TripDelayInfo])? {
+        guard FileManager.default.fileExists(atPath: gtfsDir.appendingPathComponent("stops.txt").path) else {
+            return nil
+        }
+        let folder = gtfsDir.path
+        let pbPath = pbURL.path
+        return await Task.detached(priority: .userInitiated) {
+            let gtfs = loadGTFS(folder: folder)
+            let delays: [String: TripDelayInfo]
+            if let data = FileManager.default.contents(atPath: pbPath) {
+                delays = loadTripDelays(data: data)
+            } else {
+                delays = [:]
+            }
+            return (gtfs, delays)
+        }.value
+    }
+}
