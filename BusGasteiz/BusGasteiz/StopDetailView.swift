@@ -63,8 +63,10 @@ struct StopDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 let isFav = favorites.isStopFavorite(stop.id)
                 Button {
                     favorites.toggleStop(stop.id)
