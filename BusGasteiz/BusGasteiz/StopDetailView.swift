@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Detalle de parada: llegadas previstas
 
