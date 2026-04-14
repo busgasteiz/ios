@@ -12,6 +12,7 @@ Aplicación BusGasteiz para iOS que visualiza la información en tiempo real de 
 
 - Lenguaje de programación: Swift
 - Librería UI: SwiftUI
+- Versión mínima de iOS a soportar: 15.0
 
 ## Convenciones de código
 
@@ -22,4 +23,5 @@ Aplicación BusGasteiz para iOS que visualiza la información en tiempo real de 
 
 ## Diseño de UI
 
-- El diseño de la aplicación deberá seguir las recomendaciones del Human Interface Guidelines de Apple para iOS 26.
+- El diseño de la aplicación deberá seguir las recomendaciones del Human Interface Guidelines de Apple para iOS 26
+  siempre que sea posible.

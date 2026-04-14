@@ -7,40 +7,40 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
-		418CE9C52F8DAC41001F4E32 /* PBXContainerItemProxy */ = {
+		41D3475C2F8E440900789125 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 418CE9AF2F8DAC3F001F4E32 /* Project object */;
+			containerPortal = 41D347462F8E440700789125 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 418CE9B62F8DAC3F001F4E32;
+			remoteGlobalIDString = 41D3474D2F8E440700789125;
 			remoteInfo = BusGasteiz;
 		};
-		418CE9CF2F8DAC41001F4E32 /* PBXContainerItemProxy */ = {
+		41D347662F8E440900789125 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 418CE9AF2F8DAC3F001F4E32 /* Project object */;
+			containerPortal = 41D347462F8E440700789125 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 418CE9B62F8DAC3F001F4E32;
+			remoteGlobalIDString = 41D3474D2F8E440700789125;
 			remoteInfo = BusGasteiz;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		418CE9B72F8DAC3F001F4E32 /* BusGasteiz.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BusGasteiz.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		418CE9C42F8DAC41001F4E32 /* BusGasteizTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BusGasteizTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		418CE9CE2F8DAC41001F4E32 /* BusGasteizUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BusGasteizUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		41D3474E2F8E440700789125 /* BusGasteiz.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BusGasteiz.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		41D3475B2F8E440900789125 /* BusGasteizTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BusGasteizTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		41D347652F8E440900789125 /* BusGasteizUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BusGasteizUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		418CE9B92F8DAC3F001F4E32 /* BusGasteiz */ = {
+		41D347502F8E440700789125 /* BusGasteiz */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BusGasteiz;
 			sourceTree = "<group>";
 		};
-		418CE9C72F8DAC41001F4E32 /* BusGasteizTests */ = {
+		41D3475E2F8E440900789125 /* BusGasteizTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BusGasteizTests;
 			sourceTree = "<group>";
 		};
-		418CE9D12F8DAC41001F4E32 /* BusGasteizUITests */ = {
+		41D347682F8E440900789125 /* BusGasteizUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BusGasteizUITests;
 			sourceTree = "<group>";
@@ -48,21 +48,21 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		418CE9B42F8DAC3F001F4E32 /* Frameworks */ = {
+		41D3474B2F8E440700789125 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		418CE9C12F8DAC41001F4E32 /* Frameworks */ = {
+		41D347582F8E440900789125 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		418CE9CB2F8DAC41001F4E32 /* Frameworks */ = {
+		41D347622F8E440900789125 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -72,22 +72,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		418CE9AE2F8DAC3F001F4E32 = {
+		41D347452F8E440700789125 = {
 			isa = PBXGroup;
 			children = (
-				418CE9B92F8DAC3F001F4E32 /* BusGasteiz */,
-				418CE9C72F8DAC41001F4E32 /* BusGasteizTests */,
-				418CE9D12F8DAC41001F4E32 /* BusGasteizUITests */,
-				418CE9B82F8DAC3F001F4E32 /* Products */,
+				41D347502F8E440700789125 /* BusGasteiz */,
+				41D3475E2F8E440900789125 /* BusGasteizTests */,
+				41D347682F8E440900789125 /* BusGasteizUITests */,
+				41D3474F2F8E440700789125 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		418CE9B82F8DAC3F001F4E32 /* Products */ = {
+		41D3474F2F8E440700789125 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				418CE9B72F8DAC3F001F4E32 /* BusGasteiz.app */,
-				418CE9C42F8DAC41001F4E32 /* BusGasteizTests.xctest */,
-				418CE9CE2F8DAC41001F4E32 /* BusGasteizUITests.xctest */,
+				41D3474E2F8E440700789125 /* BusGasteiz.app */,
+				41D3475B2F8E440900789125 /* BusGasteizTests.xctest */,
+				41D347652F8E440900789125 /* BusGasteizUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,134 +95,134 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		418CE9B62F8DAC3F001F4E32 /* BusGasteiz */ = {
+		41D3474D2F8E440700789125 /* BusGasteiz */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 418CE9D82F8DAC41001F4E32 /* Build configuration list for PBXNativeTarget "BusGasteiz" */;
+			buildConfigurationList = 41D3476F2F8E440900789125 /* Build configuration list for PBXNativeTarget "BusGasteiz" */;
 			buildPhases = (
-				418CE9B32F8DAC3F001F4E32 /* Sources */,
-				418CE9B42F8DAC3F001F4E32 /* Frameworks */,
-				418CE9B52F8DAC3F001F4E32 /* Resources */,
+				41D3474A2F8E440700789125 /* Sources */,
+				41D3474B2F8E440700789125 /* Frameworks */,
+				41D3474C2F8E440700789125 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				418CE9B92F8DAC3F001F4E32 /* BusGasteiz */,
+				41D347502F8E440700789125 /* BusGasteiz */,
 			);
 			name = BusGasteiz;
 			packageProductDependencies = (
 			);
 			productName = BusGasteiz;
-			productReference = 418CE9B72F8DAC3F001F4E32 /* BusGasteiz.app */;
+			productReference = 41D3474E2F8E440700789125 /* BusGasteiz.app */;
 			productType = "com.apple.product-type.application";
 		};
-		418CE9C32F8DAC41001F4E32 /* BusGasteizTests */ = {
+		41D3475A2F8E440900789125 /* BusGasteizTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 418CE9DB2F8DAC41001F4E32 /* Build configuration list for PBXNativeTarget "BusGasteizTests" */;
+			buildConfigurationList = 41D347722F8E440900789125 /* Build configuration list for PBXNativeTarget "BusGasteizTests" */;
 			buildPhases = (
-				418CE9C02F8DAC41001F4E32 /* Sources */,
-				418CE9C12F8DAC41001F4E32 /* Frameworks */,
-				418CE9C22F8DAC41001F4E32 /* Resources */,
+				41D347572F8E440900789125 /* Sources */,
+				41D347582F8E440900789125 /* Frameworks */,
+				41D347592F8E440900789125 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				418CE9C62F8DAC41001F4E32 /* PBXTargetDependency */,
+				41D3475D2F8E440900789125 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				418CE9C72F8DAC41001F4E32 /* BusGasteizTests */,
+				41D3475E2F8E440900789125 /* BusGasteizTests */,
 			);
 			name = BusGasteizTests;
 			packageProductDependencies = (
 			);
 			productName = BusGasteizTests;
-			productReference = 418CE9C42F8DAC41001F4E32 /* BusGasteizTests.xctest */;
+			productReference = 41D3475B2F8E440900789125 /* BusGasteizTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		418CE9CD2F8DAC41001F4E32 /* BusGasteizUITests */ = {
+		41D347642F8E440900789125 /* BusGasteizUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 418CE9DE2F8DAC41001F4E32 /* Build configuration list for PBXNativeTarget "BusGasteizUITests" */;
+			buildConfigurationList = 41D347752F8E440900789125 /* Build configuration list for PBXNativeTarget "BusGasteizUITests" */;
 			buildPhases = (
-				418CE9CA2F8DAC41001F4E32 /* Sources */,
-				418CE9CB2F8DAC41001F4E32 /* Frameworks */,
-				418CE9CC2F8DAC41001F4E32 /* Resources */,
+				41D347612F8E440900789125 /* Sources */,
+				41D347622F8E440900789125 /* Frameworks */,
+				41D347632F8E440900789125 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				418CE9D02F8DAC41001F4E32 /* PBXTargetDependency */,
+				41D347672F8E440900789125 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				418CE9D12F8DAC41001F4E32 /* BusGasteizUITests */,
+				41D347682F8E440900789125 /* BusGasteizUITests */,
 			);
 			name = BusGasteizUITests;
 			packageProductDependencies = (
 			);
 			productName = BusGasteizUITests;
-			productReference = 418CE9CE2F8DAC41001F4E32 /* BusGasteizUITests.xctest */;
+			productReference = 41D347652F8E440900789125 /* BusGasteizUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		418CE9AF2F8DAC3F001F4E32 /* Project object */ = {
+		41D347462F8E440700789125 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
-					418CE9B62F8DAC3F001F4E32 = {
+					41D3474D2F8E440700789125 = {
 						CreatedOnToolsVersion = 26.4;
 					};
-					418CE9C32F8DAC41001F4E32 = {
+					41D3475A2F8E440900789125 = {
 						CreatedOnToolsVersion = 26.4;
-						TestTargetID = 418CE9B62F8DAC3F001F4E32;
+						TestTargetID = 41D3474D2F8E440700789125;
 					};
-					418CE9CD2F8DAC41001F4E32 = {
+					41D347642F8E440900789125 = {
 						CreatedOnToolsVersion = 26.4;
-						TestTargetID = 418CE9B62F8DAC3F001F4E32;
+						TestTargetID = 41D3474D2F8E440700789125;
 					};
 				};
 			};
-			buildConfigurationList = 418CE9B22F8DAC3F001F4E32 /* Build configuration list for PBXProject "BusGasteiz" */;
+			buildConfigurationList = 41D347492F8E440700789125 /* Build configuration list for PBXProject "BusGasteiz" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 418CE9AE2F8DAC3F001F4E32;
+			mainGroup = 41D347452F8E440700789125;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 418CE9B82F8DAC3F001F4E32 /* Products */;
+			productRefGroup = 41D3474F2F8E440700789125 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				418CE9B62F8DAC3F001F4E32 /* BusGasteiz */,
-				418CE9C32F8DAC41001F4E32 /* BusGasteizTests */,
-				418CE9CD2F8DAC41001F4E32 /* BusGasteizUITests */,
+				41D3474D2F8E440700789125 /* BusGasteiz */,
+				41D3475A2F8E440900789125 /* BusGasteizTests */,
+				41D347642F8E440900789125 /* BusGasteizUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		418CE9B52F8DAC3F001F4E32 /* Resources */ = {
+		41D3474C2F8E440700789125 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		418CE9C22F8DAC41001F4E32 /* Resources */ = {
+		41D347592F8E440900789125 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		418CE9CC2F8DAC41001F4E32 /* Resources */ = {
+		41D347632F8E440900789125 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -232,21 +232,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		418CE9B32F8DAC3F001F4E32 /* Sources */ = {
+		41D3474A2F8E440700789125 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		418CE9C02F8DAC41001F4E32 /* Sources */ = {
+		41D347572F8E440900789125 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		418CE9CA2F8DAC41001F4E32 /* Sources */ = {
+		41D347612F8E440900789125 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -256,20 +256,20 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		418CE9C62F8DAC41001F4E32 /* PBXTargetDependency */ = {
+		41D3475D2F8E440900789125 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 418CE9B62F8DAC3F001F4E32 /* BusGasteiz */;
-			targetProxy = 418CE9C52F8DAC41001F4E32 /* PBXContainerItemProxy */;
+			target = 41D3474D2F8E440700789125 /* BusGasteiz */;
+			targetProxy = 41D3475C2F8E440900789125 /* PBXContainerItemProxy */;
 		};
-		418CE9D02F8DAC41001F4E32 /* PBXTargetDependency */ = {
+		41D347672F8E440900789125 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 418CE9B62F8DAC3F001F4E32 /* BusGasteiz */;
-			targetProxy = 418CE9CF2F8DAC41001F4E32 /* PBXContainerItemProxy */;
+			target = 41D3474D2F8E440700789125 /* BusGasteiz */;
+			targetProxy = 41D347662F8E440900789125 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		418CE9D62F8DAC41001F4E32 /* Debug */ = {
+		41D3476D2F8E440900789125 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -333,7 +333,7 @@
 			};
 			name = Debug;
 		};
-		418CE9D72F8DAC41001F4E32 /* Release */ = {
+		41D3476E2F8E440900789125 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -390,7 +390,7 @@
 			};
 			name = Release;
 		};
-		418CE9D92F8DAC41001F4E32 /* Debug */ = {
+		41D347702F8E440900789125 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -405,6 +405,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -422,7 +423,7 @@
 			};
 			name = Debug;
 		};
-		418CE9DA2F8DAC41001F4E32 /* Release */ = {
+		41D347712F8E440900789125 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -437,6 +438,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -454,7 +456,7 @@
 			};
 			name = Release;
 		};
-		418CE9DC2F8DAC41001F4E32 /* Debug */ = {
+		41D347732F8E440900789125 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -462,7 +464,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RSEH385M54;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jaureguialzo.BusGasteizTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -476,7 +478,7 @@
 			};
 			name = Debug;
 		};
-		418CE9DD2F8DAC41001F4E32 /* Release */ = {
+		41D347742F8E440900789125 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -484,7 +486,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RSEH385M54;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jaureguialzo.BusGasteizTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -498,13 +500,14 @@
 			};
 			name = Release;
 		};
-		418CE9DF2F8DAC41001F4E32 /* Debug */ = {
+		41D347762F8E440900789125 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RSEH385M54;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jaureguialzo.BusGasteizUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -518,13 +521,14 @@
 			};
 			name = Debug;
 		};
-		418CE9E02F8DAC41001F4E32 /* Release */ = {
+		41D347772F8E440900789125 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RSEH385M54;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jaureguialzo.BusGasteizUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -541,43 +545,43 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		418CE9B22F8DAC3F001F4E32 /* Build configuration list for PBXProject "BusGasteiz" */ = {
+		41D347492F8E440700789125 /* Build configuration list for PBXProject "BusGasteiz" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				418CE9D62F8DAC41001F4E32 /* Debug */,
-				418CE9D72F8DAC41001F4E32 /* Release */,
+				41D3476D2F8E440900789125 /* Debug */,
+				41D3476E2F8E440900789125 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		418CE9D82F8DAC41001F4E32 /* Build configuration list for PBXNativeTarget "BusGasteiz" */ = {
+		41D3476F2F8E440900789125 /* Build configuration list for PBXNativeTarget "BusGasteiz" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				418CE9D92F8DAC41001F4E32 /* Debug */,
-				418CE9DA2F8DAC41001F4E32 /* Release */,
+				41D347702F8E440900789125 /* Debug */,
+				41D347712F8E440900789125 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		418CE9DB2F8DAC41001F4E32 /* Build configuration list for PBXNativeTarget "BusGasteizTests" */ = {
+		41D347722F8E440900789125 /* Build configuration list for PBXNativeTarget "BusGasteizTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				418CE9DC2F8DAC41001F4E32 /* Debug */,
-				418CE9DD2F8DAC41001F4E32 /* Release */,
+				41D347732F8E440900789125 /* Debug */,
+				41D347742F8E440900789125 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		418CE9DE2F8DAC41001F4E32 /* Build configuration list for PBXNativeTarget "BusGasteizUITests" */ = {
+		41D347752F8E440900789125 /* Build configuration list for PBXNativeTarget "BusGasteizUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				418CE9DF2F8DAC41001F4E32 /* Debug */,
-				418CE9E02F8DAC41001F4E32 /* Release */,
+				41D347762F8E440900789125 /* Debug */,
+				41D347772F8E440900789125 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 418CE9AF2F8DAC3F001F4E32 /* Project object */;
+	rootObject = 41D347462F8E440700789125 /* Project object */;
 }
