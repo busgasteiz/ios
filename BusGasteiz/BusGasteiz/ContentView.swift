@@ -14,21 +14,21 @@ struct ContentView: View {
                 NearbyStopsView()
             }
             .tabItem {
-                Label("Paradas", systemImage: "list.bullet")
+                Label("Stops", systemImage: "list.bullet")
             }
 
             NavigationStack {
                 BusMapView()
             }
             .tabItem {
-                Label("Mapa", systemImage: "map")
+                Label("Map", systemImage: "map")
             }
 
             NavigationStack {
                 FavoritesView()
             }
             .tabItem {
-                Label("Favoritos", systemImage: "star")
+                Label("Favorites", systemImage: "star")
             }
         }
     }

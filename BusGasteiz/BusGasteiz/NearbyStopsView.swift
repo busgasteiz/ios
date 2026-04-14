@@ -17,7 +17,7 @@ struct NearbyStopsView: View {
         Group {
             switch dataManager.loadState {
             case .idle:
-                loadingView(message: "Iniciando…")
+                loadingView(message: String(localized: "Starting up…"))
 
             case .loading(let msg):
                 loadingView(message: msg)
@@ -29,7 +29,7 @@ struct NearbyStopsView: View {
                 stopsListView
             }
         }
-        .navigationTitle("Paradas cercanas")
+        .navigationTitle("Nearby Stops")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             radiusMenu
@@ -51,9 +51,9 @@ struct NearbyStopsView: View {
         Group {
             if nearbyStops.isEmpty {
                 ContentUnavailableView(
-                    "Sin paradas cercanas",
+                    "No Nearby Stops",
                     systemImage: "bus.doubledecker",
-                    description: Text("No hay paradas en un radio de \(Int(searchRadius)) m.\nAumenta el radio de búsqueda.")
+                    description: Text("There are no stops within \(Int(searchRadius)) m.\nIncrease the search radius.")
                 )
             } else {
                 List(nearbyStops) { nearby in
@@ -87,11 +87,11 @@ struct NearbyStopsView: View {
 
     private func errorView(message: String) -> some View {
         ContentUnavailableView {
-            Label("Error al cargar datos", systemImage: "exclamationmark.triangle")
+            Label("Error Loading Data", systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
         } actions: {
-            Button("Reintentar") {
+            Button("Retry") {
                 Task { await dataManager.forceRefresh() }
             }
             .buttonStyle(.borderedProminent)
@@ -200,6 +200,8 @@ struct StopRowView: View {
     }
 
     private func distanceLabel(_ d: Double) -> String {
-        d < 1000 ? "\(Int(d.rounded())) m" : String(format: "%.1f km", d / 1000)
+        d < 1000
+            ? String(format: String(localized: "%lld m"), Int(d.rounded()))
+            : String(format: "%.1f km", d / 1000)
     }
 }

@@ -77,14 +77,14 @@ final class DataManager {
 
             // Datos GTFS estáticos Tuvisa: descargar solo si no están frescos
             if !isGTFSFresh() {
-                if !hasData { loadState = .loading("Descargando datos GTFS…") }
+                if !hasData { loadState = .loading(String(localized: "Downloading GTFS data…")) }
                 print("[DataManager] Descargando GTFS ZIP Tuvisa…")
                 let zipData = try await downloadData(
                     from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/google_transit.zip"
                 )
                 print("[DataManager] ZIP descargado: \(zipData.count) bytes")
 
-                if !hasData { loadState = .loading("Descomprimiendo datos GTFS…") }
+                if !hasData { loadState = .loading(String(localized: "Extracting GTFS data…")) }
                 try await extractZip(zipData: zipData, to: gtfsDir)
                 print("[DataManager] ZIP descomprimido")
             } else {
@@ -93,14 +93,14 @@ final class DataManager {
 
             // Datos GTFS estáticos Euskotren: descargar solo si no están frescos
             if !isEuskoTranFresh() {
-                if !hasData { loadState = .loading("Descargando datos tranvía…") }
+                if !hasData { loadState = .loading(String(localized: "Downloading tram data…")) }
                 print("[DataManager] Descargando GTFS ZIP Euskotren…")
                 let tramZipData = try await downloadData(
                     from: "https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfs_euskotren.zip"
                 )
                 print("[DataManager] ZIP Euskotren descargado: \(tramZipData.count) bytes")
 
-                if !hasData { loadState = .loading("Descomprimiendo datos tranvía…") }
+                if !hasData { loadState = .loading(String(localized: "Extracting tram data…")) }
                 try await extractZip(zipData: tramZipData, to: euskotrenGtfsDir)
                 print("[DataManager] ZIP Euskotren descomprimido")
             } else {
@@ -108,7 +108,7 @@ final class DataManager {
             }
 
             // Feed RT Tuvisa: siempre actualizar
-            if !hasData { loadState = .loading("Descargando datos en tiempo real…") }
+            if !hasData { loadState = .loading(String(localized: "Downloading real-time data…")) }
             print("[DataManager] Descargando feed RT Tuvisa…")
             let pbData = try await downloadData(
                 from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
@@ -125,7 +125,7 @@ final class DataManager {
             try euskotrenPbData.write(to: euskotrenPbURL)
 
             // Parsear en background
-            if !hasData { loadState = .loading("Procesando datos…") }
+            if !hasData { loadState = .loading(String(localized: "Processing data…")) }
             let (parsed, delays) = await parseInBackground()
             print("[DataManager] Datos parseados: \(parsed.stops.count) paradas (\(parsed.stops.values.filter(\.isTram).count) tranvía), \(delays.count) trips RT")
 

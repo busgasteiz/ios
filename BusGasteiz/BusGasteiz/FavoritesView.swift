@@ -19,7 +19,7 @@ struct FavoritesView: View {
                 loadingView
             }
         }
-        .navigationTitle("Favoritos")
+        .navigationTitle("Favorites")
         .navigationBarTitleDisplayMode(.large)
     }
 
@@ -27,16 +27,16 @@ struct FavoritesView: View {
 
     private var emptyView: some View {
         ContentUnavailableView(
-            "Sin favoritos",
+            "No Favorites",
             systemImage: "star",
-            description: Text("Toca la estrella en una parada o línea para guardarla aquí.")
+            description: Text("Tap the star on a stop or line to save it here.")
         )
     }
 
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView().scaleEffect(1.5)
-            Text("Cargando datos…").foregroundStyle(.secondary)
+            Text("Loading data…").foregroundStyle(.secondary)
         }
     }
 
@@ -56,7 +56,7 @@ struct FavoritesView: View {
 
         List {
             if !stopRows.isEmpty {
-                Section("Paradas") {
+                Section("Stops") {
                     ForEach(stopRows, id: \.stop.id) { row in
                         NavigationLink {
                             StopDetailView(stop: row.stop, distance: row.distance)
@@ -71,7 +71,7 @@ struct FavoritesView: View {
             }
 
             if !routeRows.isEmpty {
-                Section("Líneas") {
+                Section("Lines") {
                     ForEach(routeRows, id: \.key.id) { row in
                         NavigationLink {
                             RouteArrivalsView(stop: row.stop, distance: dist(for: row.stop),
@@ -127,8 +127,10 @@ struct FavoriteStopRow: View {
     }
 
     private func distanceLabel(_ d: Double) -> String {
-        d == 0 ? "Parada favorita" :
-        d < 1000 ? "\(Int(d.rounded())) m" : String(format: "%.1f km", d / 1000)
+        if d == 0 { return String(localized: "Favorite stop") }
+        return d < 1000
+            ? String(format: String(localized: "%lld m"), Int(d.rounded()))
+            : String(format: "%.1f km", d / 1000)
     }
 }
 
@@ -157,7 +159,7 @@ struct FavoriteRouteRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(stopName)
                     .font(.body)
-                Text(isTram ? "Tranvía" : "Autobús")
+                Text(isTram ? String(localized: "Tram") : String(localized: "Bus"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

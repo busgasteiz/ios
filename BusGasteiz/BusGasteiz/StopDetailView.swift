@@ -20,9 +20,9 @@ struct StopDetailView: View {
             if arrivals.isEmpty {
                 ScrollView {
                     ContentUnavailableView(
-                        "Sin llegadas",
+                        "No Arrivals",
                         systemImage: "clock",
-                        description: Text("No hay llegadas previstas en los próximos 60 minutos.")
+                        description: Text("No scheduled arrivals in the next 60 minutes.")
                     )
                     .padding(.top, 60)
                 }
@@ -43,7 +43,7 @@ struct StopDetailView: View {
                             favorites.toggleRoute(stopId: stop.id,
                                                   routeShortName: arrival.routeShortName)
                         } label: {
-                            Label(isFav ? "Quitar" : "Favorito",
+                            Label(isFav ? String(localized: "Remove") : String(localized: "Favorite"),
                                   systemImage: isFav ? "star.slash.fill" : "star.fill")
                         }
                         .tint(isFav ? .gray : .yellow)
@@ -106,7 +106,9 @@ struct StopDetailView: View {
     }
 
     private func distanceLabel(_ d: Double) -> String {
-        d < 1000 ? "\(Int(d.rounded())) m" : String(format: "%.1f km", d / 1000)
+        d < 1000
+            ? String(format: String(localized: "%lld m"), Int(d.rounded()))
+            : String(format: "%.1f km", d / 1000)
     }
 }
 
@@ -140,16 +142,16 @@ struct ArrivalRowView: View {
 
                 if arrival.isRealTime {
                     if arrival.delaySecs != 0 {
-                        Text("Prog. \(formatTime(arrival.scheduledTime))  •  \(delayText)")
+                        Text("Sch. \(formatTime(arrival.scheduledTime)) • \(delayText)")
                             .font(.caption)
                             .foregroundStyle(arrival.delaySecs > 0 ? .red : .green)
                     } else {
-                        Label("Tiempo real", systemImage: "antenna.radiowaves.left.and.right")
+                        Label("Live", systemImage: "antenna.radiowaves.left.and.right")
                             .font(.caption)
                             .foregroundStyle(.green)
                     }
                 } else {
-                    Label("Horario previsto", systemImage: "calendar")
+                    Label("Scheduled", systemImage: "calendar")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -174,9 +176,9 @@ struct ArrivalRowView: View {
     private var timeLabel: String {
         let mins = minutesUntil(arrival.predictedTime, from: now)
         switch mins {
-        case ..<1:  return "Ahora"
-        case 1:     return "1 min"
-        default:    return "\(mins) min"
+        case ..<1:  return String(localized: "Now")
+        case 1:     return String(localized: "1 min")
+        default:    return String(format: String(localized: "%lld min"), mins)
         }
     }
 
@@ -237,9 +239,9 @@ struct RouteArrivalsView: View {
             if arrivals.isEmpty {
                 ScrollView {
                     ContentUnavailableView(
-                        "Sin llegadas",
+                        "No Arrivals",
                         systemImage: "clock",
-                        description: Text("No hay más llegadas de la línea \(routeShortName) en los próximos 60 minutos.")
+                        description: Text("No more arrivals of line \(routeShortName) in the next 60 minutes.")
                     )
                     .padding(.top, 60)
                 }
@@ -252,7 +254,7 @@ struct RouteArrivalsView: View {
                 .refreshable { await refreshAndRecompute() }
             }
         }
-        .navigationTitle("Línea \(routeShortName)")
+        .navigationTitle(String(format: String(localized: "Line %@"), routeShortName))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {

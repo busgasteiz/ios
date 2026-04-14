@@ -38,7 +38,7 @@ struct BusMapView: View {
             MapCompass()
             MapScaleView()
         }
-        .navigationTitle("Mapa")
+        .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             locationButton
@@ -51,7 +51,7 @@ struct BusMapView: View {
                     StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: true)
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
-                                Button("Cerrar") { showStopSheet = false }
+                                Button("Close") { showStopSheet = false }
                             }
                         }
                 }
