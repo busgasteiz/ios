@@ -277,6 +277,23 @@ nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double, gt
         .sorted { $0.distance < $1.distance }
 }
 
+/// Paradas dentro del área visible del mapa (bounding box), ordenadas por distancia al punto de referencia.
+nonisolated func computeStopsInBounds(
+    minLat: Double, maxLat: Double,
+    minLon: Double, maxLon: Double,
+    refLat: Double, refLon: Double,
+    gtfsData: GTFSData
+) -> [NearbyStop] {
+    gtfsData.stops.values
+        .compactMap { stop -> NearbyStop? in
+            guard stop.lat >= minLat && stop.lat <= maxLat &&
+                  stop.lon >= minLon && stop.lon <= maxLon else { return nil }
+            let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
+            return NearbyStop(stop: stop, distance: d)
+        }
+        .sorted { $0.distance < $1.distance }
+}
+
 /// Llegadas previstas para una parada en los próximos `windowMinutes` minutos.
 nonisolated func computeArrivals(
     stopId: String,

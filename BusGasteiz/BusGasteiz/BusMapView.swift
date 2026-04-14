@@ -16,6 +16,7 @@ struct BusMapView: View {
     @State private var selectedStop: NearbyStop?
     @State private var showStopSheet = false
     @State private var isReloading = false
+    @State private var visibleRegion: MKCoordinateRegion?
 
     var body: some View {
         Map(position: $position, selection: $selectedStopId) {
@@ -68,6 +69,10 @@ struct BusMapView: View {
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
         .onChange(of: searchRadius) { centerOnUser() }
+        .onMapCameraChange(frequency: .onEnd) { context in
+            visibleRegion = context.region
+            recompute()
+        }
         .onAppear {
             centerOnUser()
             recompute()
@@ -146,19 +151,33 @@ struct BusMapView: View {
     }
 
     private func recompute() {
-        guard let gtfs = dataManager.gtfsData else { return }
-        let lat: Double
-        let lon: Double
+        guard let gtfs = dataManager.gtfsData,
+              let region = visibleRegion else { return }
+
+        let halfLat = region.span.latitudeDelta / 2
+        let halfLon = region.span.longitudeDelta / 2
+        let minLat = region.center.latitude  - halfLat
+        let maxLat = region.center.latitude  + halfLat
+        let minLon = region.center.longitude - halfLon
+        let maxLon = region.center.longitude + halfLon
+
+        let refLat: Double
+        let refLon: Double
         if let loc = locationManager.location {
-            lat = loc.coordinate.latitude
-            lon = loc.coordinate.longitude
+            refLat = loc.coordinate.latitude
+            refLon = loc.coordinate.longitude
         } else {
-            lat = 42.846718
-            lon = -2.671622
+            refLat = 42.846718
+            refLon = -2.671622
         }
-        let radius = searchRadius
+
         Task.detached(priority: .userInitiated) {
-            let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs)
+            let stops = computeStopsInBounds(
+                minLat: minLat, maxLat: maxLat,
+                minLon: minLon, maxLon: maxLon,
+                refLat: refLat, refLon: refLon,
+                gtfsData: gtfs
+            )
             await MainActor.run { nearbyStops = stops }
         }
     }
