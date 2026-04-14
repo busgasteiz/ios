@@ -156,8 +156,9 @@ struct NearbyStopsView: View {
             lon = -2.671622
         }
         let radius = searchRadius
+        let activeIds = dataManager.activeStopIds
         Task.detached(priority: .userInitiated) {
-            let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs)
+            let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs, activeStopIds: activeIds)
             await MainActor.run { nearbyStops = stops }
         }
     }

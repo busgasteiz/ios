@@ -20,6 +20,8 @@ final class DataManager {
     var loadState: LoadState = .idle
     var gtfsData: GTFSData?
     var tripDelays: [String: TripDelayInfo] = [:]
+    /// Set de stop_id con llegadas en los próximos 60 min. Se actualiza al cargar datos.
+    var activeStopIds: Set<String> = []
     var lastRefresh: Date?
     /// Se incrementa con cada recarga; útil para `onChange` en vistas.
     private(set) var version: Int = 0
@@ -131,6 +133,7 @@ final class DataManager {
 
             gtfsData = parsed
             tripDelays = delays
+            activeStopIds = computeStopsWithUpcomingArrivals(gtfsData: parsed)
             lastRefresh = Date()
             version += 1
             loadState = .ready
@@ -146,6 +149,7 @@ final class DataManager {
                 if let cached = await tryLoadFromCache() {
                     gtfsData = cached.gtfs
                     tripDelays = cached.delays
+                    activeStopIds = computeStopsWithUpcomingArrivals(gtfsData: cached.gtfs)
                     version += 1
                     loadState = .ready
                     print("[DataManager] Cargado desde caché")

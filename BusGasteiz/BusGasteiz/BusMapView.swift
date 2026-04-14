@@ -200,12 +200,14 @@ struct BusMapView: View {
             refLon = -2.671622
         }
 
+        let activeIds = dataManager.activeStopIds
         Task.detached(priority: .userInitiated) {
             let stops = computeStopsInBounds(
                 minLat: minLat, maxLat: maxLat,
                 minLon: minLon, maxLon: maxLon,
                 refLat: refLat, refLon: refLon,
-                gtfsData: gtfs
+                gtfsData: gtfs,
+                activeStopIds: activeIds
             )
             await MainActor.run { nearbyStops = stops }
         }

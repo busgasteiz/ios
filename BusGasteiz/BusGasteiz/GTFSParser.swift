@@ -18,19 +18,29 @@ nonisolated func dateString(_ date: Date) -> String {
 }
 
 /// Convierte (fecha de servicio yyyyMMdd, segundos desde medianoche) → Date.
-nonisolated func scheduledDate(serviceDate: String, secondsFromMidnight: Int) -> Date? {
+// MARK: - Formateadores compartidos (DateFormatter es caro de crear)
+
+nonisolated private let _gtfsDateFormatter: DateFormatter = {
     let f = DateFormatter()
     f.dateFormat = "yyyyMMdd"
     f.timeZone = TimeZone(identifier: "Europe/Madrid")
-    guard let base = f.date(from: serviceDate) else { return nil }
+    return f
+}()
+
+nonisolated private let _timeFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm"
+    f.timeZone = TimeZone(identifier: "Europe/Madrid")
+    return f
+}()
+
+nonisolated func scheduledDate(serviceDate: String, secondsFromMidnight: Int) -> Date? {
+    guard let base = _gtfsDateFormatter.date(from: serviceDate) else { return nil }
     return base.addingTimeInterval(TimeInterval(secondsFromMidnight))
 }
 
 nonisolated func formatTime(_ date: Date) -> String {
-    let f = DateFormatter()
-    f.dateFormat = "HH:mm"
-    f.timeZone = TimeZone(identifier: "Europe/Madrid")
-    return f.string(from: date)
+    _timeFormatter.string(from: date)
 }
 
 nonisolated func minutesUntil(_ date: Date, from now: Date = Date()) -> Int {
@@ -495,47 +505,59 @@ nonisolated func stopHasServiceToday(stopId: String, gtfsData: GTFSData) -> Bool
 
 /// Calcula de una sola pasada el conjunto de stop_id que tienen al menos una
 /// llegada prevista en los próximos `windowMinutes` minutos.
-/// Reutiliza la misma lógica de fechas que computeArrivals, por lo que el
-/// resultado coincide exactamente con lo que se muestra en el detalle de parada.
+/// Usa aritmética de epoch pura (sin DateFormatter en el bucle) para ser rápido.
 nonisolated func computeStopsWithUpcomingArrivals(gtfsData: GTFSData, windowMinutes: Int = 60) -> Set<String> {
-    let now          = Date()
-    let today        = dateString(now)
-    let yesterday    = dateString(now.addingTimeInterval(-86400))
+    let now           = Date()
+    let nowEpoch      = now.timeIntervalSince1970
+    let windowStart   = nowEpoch - 60
+    let windowEnd     = nowEpoch + Double(windowMinutes) * 60
+
+    // Precalcula la epoch de medianoche (Europe/Madrid) para hoy y ayer,
+    // sin DateFormatter en el bucle.
+    let tz = TimeZone(identifier: "Europe/Madrid")!
+    func midnightEpoch(daysAgo: Int) -> Double {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = tz
+        let d = cal.startOfDay(for: now.addingTimeInterval(Double(-daysAgo) * 86400))
+        return d.timeIntervalSince1970
+    }
+    let todayMidnight     = midnightEpoch(daysAgo: 0)
+    let yesterdayMidnight = midnightEpoch(daysAgo: 1)
+
+    let today     = dateString(now)
+    let yesterday = dateString(now.addingTimeInterval(-86400))
     let activeIds:    Set<String> = gtfsData.activeDates[today]     ?? []
     let yesterdayIds: Set<String> = gtfsData.activeDates[yesterday] ?? []
-    let windowStart  = now.addingTimeInterval(-60)
-    let windowEnd    = now.addingTimeInterval(TimeInterval(windowMinutes * 60))
 
     var result = Set<String>()
     for (stopId, entries) in gtfsData.stopArrivals {
-        guard !result.contains(stopId) else { continue }   // ya confirmado
+        guard !result.contains(stopId) else { continue }
         for entry in entries {
             guard let trip = gtfsData.trips[entry.tripId] else { continue }
-            guard resolveServiceDate(
-                trip: trip,
-                arrivalSecs: entry.arrivalSecs,
-                activeServiceIds: activeIds,
-                yesterdayActiveIds: yesterdayIds,
-                today: today,
-                yesterday: yesterday,
-                windowStart: windowStart,
-                windowEnd: windowEnd
-            ) != nil else { continue }
-            result.insert(stopId)
-            break   // un viaje activo es suficiente
+            let svc = trip.serviceId
+            // Comprobar hoy
+            if activeIds.contains(svc) || svc == "UNDEFINED" {
+                let t = todayMidnight + Double(entry.arrivalSecs)
+                if t >= windowStart && t <= windowEnd { result.insert(stopId); break }
+            }
+            // Comprobar viajes que cruzaron medianoche (servicio de ayer, hora >24h)
+            if yesterdayIds.contains(svc) || svc == "UNDEFINED" {
+                let t = yesterdayMidnight + Double(entry.arrivalSecs)
+                if t >= windowStart && t <= windowEnd { result.insert(stopId); break }
+            }
         }
     }
     return result
 }
 
 /// Paradas dentro del radio, ordenadas por distancia.
-nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double, gtfsData: GTFSData) -> [NearbyStop] {
-    let activeStops = computeStopsWithUpcomingArrivals(gtfsData: gtfsData)
+nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double,
+                                     gtfsData: GTFSData, activeStopIds: Set<String>) -> [NearbyStop] {
     return gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             let d = haversine(lat1: lat, lon1: lon, lat2: stop.lat, lon2: stop.lon)
             guard d <= radius else { return nil }
-            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStops.contains(stop.id))
+            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStopIds.contains(stop.id))
         }
         .sorted { $0.distance < $1.distance }
 }
@@ -545,15 +567,15 @@ nonisolated func computeStopsInBounds(
     minLat: Double, maxLat: Double,
     minLon: Double, maxLon: Double,
     refLat: Double, refLon: Double,
-    gtfsData: GTFSData
+    gtfsData: GTFSData,
+    activeStopIds: Set<String>
 ) -> [NearbyStop] {
-    let activeStops = computeStopsWithUpcomingArrivals(gtfsData: gtfsData)
     return gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             guard stop.lat >= minLat && stop.lat <= maxLat &&
                   stop.lon >= minLon && stop.lon <= maxLon else { return nil }
             let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
-            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStops.contains(stop.id))
+            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStopIds.contains(stop.id))
         }
         .sorted { $0.distance < $1.distance }
 }
