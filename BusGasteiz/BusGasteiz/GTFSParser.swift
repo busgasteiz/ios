@@ -653,3 +653,88 @@ nonisolated func computeArrivals(
     arrivals.sort { $0.predictedTime < $1.predictedTime }
     return arrivals
 }
+
+/// Devuelve el primer servicio futuro por línea en los próximos `daysAhead` días,
+/// útil para mostrar cuándo volverá a haber servicio cuando la ventana de 60 min está vacía.
+nonisolated func computeNextArrivals(
+    stopId: String,
+    distance: Double,
+    gtfsData: GTFSData,
+    delays: [String: TripDelayInfo],
+    daysAhead: Int = 7
+) -> [UpcomingArrival] {
+    guard let stop = gtfsData.stops[stopId],
+          let entries = gtfsData.stopArrivals[stopId] else { return [] }
+
+    let now = Date()
+    let nowEpoch = now.timeIntervalSince1970
+
+    let tz = TimeZone(identifier: "Europe/Madrid")!
+    var cal = Calendar(identifier: .gregorian)
+    cal.timeZone = tz
+
+    // Construye la lista de días a buscar: ayer (viajes cross-midnight) + hoy + próximos días
+    struct DayInfo { let dateStr: String; let midnightEpoch: Double; let svcIds: Set<String> }
+    var days: [DayInfo] = []
+    for offset in -1..<daysAhead {
+        let date = now.addingTimeInterval(Double(offset) * 86400)
+        let str = dateString(date)
+        let midnight = cal.startOfDay(for: date).timeIntervalSince1970
+        let svcIds: Set<String> = gtfsData.activeDates[str] ?? []
+        days.append(DayInfo(dateStr: str, midnightEpoch: midnight, svcIds: svcIds))
+    }
+
+    // Mejor (más próxima futura) llegada por routeShortName
+    var bestEpochByRoute: [String: Double] = [:]
+    var bestArrivalByRoute: [String: UpcomingArrival] = [:]
+
+    for entry in entries {
+        guard let trip = gtfsData.trips[entry.tripId] else { continue }
+        let svc = trip.serviceId
+        let route = gtfsData.routes[trip.routeId]
+        let routeShortName = route?.shortName ?? trip.routeId
+
+        for day in days {
+            let active = day.svcIds.contains(svc) || svc == "UNDEFINED"
+            guard active else { continue }
+
+            let epoch = day.midnightEpoch + Double(entry.arrivalSecs)
+            guard epoch > nowEpoch else { continue } // solo en el futuro
+
+            // Si ya tenemos una mejor, descartamos
+            if let best = bestEpochByRoute[routeShortName], best <= epoch { continue }
+
+            let schTime = Date(timeIntervalSince1970: epoch)
+            let delayInfo = delays[entry.tripId]
+            let delay: Int32
+            let isRT: Bool
+            if let d = delayInfo?.stopDelays[stopId] {
+                delay = d; isRT = true
+            } else if let g = delayInfo?.generalDelay {
+                delay = g; isRT = true
+            } else {
+                delay = 0; isRT = false
+            }
+            let predTime = schTime.addingTimeInterval(TimeInterval(delay))
+
+            bestEpochByRoute[routeShortName] = epoch
+            bestArrivalByRoute[routeShortName] = UpcomingArrival(
+                stopId: stopId,
+                stopName: stop.name,
+                distanceMeters: distance,
+                routeShortName: routeShortName,
+                routeLongName:  route?.longName  ?? "",
+                routeColor:     route?.color     ?? "",
+                headsign:       trip.headsign,
+                scheduledTime:  schTime,
+                predictedTime:  predTime,
+                delaySecs:      delay,
+                vehicleLabel:   delayInfo?.vehicleLabel ?? "",
+                isRealTime:     isRT
+            )
+            break // este día ya da el mínimo para esta entrada; ir al siguiente entry
+        }
+    }
+
+    return bestArrivalByRoute.values.sorted { $0.scheduledTime < $1.scheduledTime }
+}

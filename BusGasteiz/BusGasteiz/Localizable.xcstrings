@@ -252,6 +252,27 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Tranvía" } },
         "eu" : { "stringUnit" : { "state" : "translated", "value" : "Tranbia" } }
       }
+    },
+    "%lldh" : {
+      "comment" : "Hours countdown (whole hours, no minutes) on arrival row",
+      "localizations" : {
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lldh" } },
+        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lldh" } }
+      }
+    },
+    "%lldh %lldm" : {
+      "comment" : "Hours and minutes countdown on arrival row",
+      "localizations" : {
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lldh %lldm" } },
+        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lldh %lldm" } }
+      }
+    },
+    "Next scheduled services" : {
+      "comment" : "Section header when showing upcoming services beyond the 60-minute window",
+      "localizations" : {
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Próximos servicios" } },
+        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Hurrengo zerbitzuak" } }
+      }
     }
   },
   "version" : "1.0"

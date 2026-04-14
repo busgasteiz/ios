@@ -13,6 +13,7 @@ struct StopDetailView: View {
     @Environment(FavoritesManager.self) private var favorites
 
     @State private var arrivals: [UpcomingArrival] = []
+    @State private var nextArrivals: [UpcomingArrival] = []
     @State private var lastUpdate: Date?
 
     var body: some View {
@@ -25,6 +26,29 @@ struct StopDetailView: View {
                         description: Text("No scheduled arrivals in the next 60 minutes.")
                     )
                     .padding(.top, 60)
+
+                    if !nextArrivals.isEmpty {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Next scheduled services")
+                                .font(.headline)
+                                .padding(.horizontal)
+                                .padding(.top, 24)
+                                .padding(.bottom, 8)
+
+                            ForEach(nextArrivals) { arrival in
+                                NavigationLink {
+                                    RouteArrivalsView(stop: stop, distance: distance,
+                                                      routeShortName: arrival.routeShortName,
+                                                      routeColor: arrival.routeColor)
+                                } label: {
+                                    ArrivalRowView(arrival: arrival)
+                                        .padding(.horizontal)
+                                }
+                                .buttonStyle(.plain)
+                                Divider().padding(.leading, 76)
+                            }
+                        }
+                    }
                 }
                 .refreshable { await refreshAndRecompute() }
             } else {
@@ -98,8 +122,13 @@ struct StopDetailView: View {
         Task.detached(priority: .userInitiated) {
             let result = computeArrivals(stopId: sid, distance: dist,
                                          gtfsData: gtfs, delays: delays)
+            let next = result.isEmpty
+                ? computeNextArrivals(stopId: sid, distance: dist,
+                                      gtfsData: gtfs, delays: delays)
+                : []
             await MainActor.run {
                 arrivals = result
+                nextArrivals = next
                 lastUpdate = Date()
             }
         }
@@ -168,9 +197,15 @@ struct ArrivalRowView: View {
     private var timeLabel: String {
         let mins = minutesUntil(arrival.predictedTime, from: now)
         switch mins {
-        case ..<1:  return String(localized: "Now")
-        case 1:     return String(localized: "1 min")
-        default:    return String(format: String(localized: "%lld min"), mins)
+        case ..<1:    return String(localized: "Now")
+        case 1:       return String(localized: "1 min")
+        case ..<60:   return String(format: String(localized: "%lld min"), mins)
+        default:
+            let h = mins / 60
+            let m = mins % 60
+            return m == 0
+                ? String(format: String(localized: "%lldh"), h)
+                : String(format: String(localized: "%lldh %lldm"), h, m)
         }
     }
 
