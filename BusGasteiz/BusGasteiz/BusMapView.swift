@@ -18,6 +18,7 @@ struct BusMapView: View {
     @State private var showStopSheet = false
     @State private var isReloading = false
     @State private var visibleRegion: MKCoordinateRegion?
+    @State private var recomputeTask: Task<Void, Never>?
 
     var body: some View {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
@@ -72,7 +73,7 @@ struct BusMapView: View {
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
         .onChange(of: searchRadius) { centerOnUser() }
-        .onMapCameraChange(frequency: .onEnd) { context in
+        .onMapCameraChange(frequency: .continuous) { context in
             visibleRegion = context.region
             recompute()
         }
@@ -200,8 +201,9 @@ struct BusMapView: View {
             refLon = -2.671622
         }
 
+        recomputeTask?.cancel()
         let activeIds = dataManager.activeStopIds
-        Task.detached(priority: .userInitiated) {
+        recomputeTask = Task.detached(priority: .userInitiated) {
             let stops = computeStopsInBounds(
                 minLat: minLat, maxLat: maxLat,
                 minLon: minLon, maxLon: maxLon,
@@ -209,6 +211,7 @@ struct BusMapView: View {
                 gtfsData: gtfs,
                 activeStopIds: activeIds
             )
+            guard !Task.isCancelled else { return }
             await MainActor.run { nearbyStops = stops }
         }
     }
