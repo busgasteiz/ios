@@ -33,15 +33,17 @@ final class BusGasteizUITests: XCTestCase {
             }
         }
 
-        // Esperar hasta 90 s a que aparezca la tabla con paradas O el estado vacío.
-        // Cualquiera de los dos indica que la carga se completó correctamente.
-        let table       = app.tables.firstMatch
-        let emptyLabel  = app.staticTexts["Sin paradas cercanas"]
-        let errorButton = app.buttons["Reintentar"]
+        // Esperar hasta 180 s a que aparezca la lista de paradas O el estado vacío.
+        // En iOS 17+ SwiftUI List usa UICollectionView en lugar de UITableView,
+        // por lo que hay que comprobar ambos tipos para compatibilidad.
+        let tableView      = app.tables.firstMatch
+        let collectionView = app.collectionViews.firstMatch
+        let emptyLabel     = app.staticTexts["Sin paradas cercanas"]
+        let errorButton    = app.buttons["Reintentar"]
 
         let loaded = XCTNSPredicateExpectation(
             predicate: NSPredicate { _, _ in
-                table.exists || emptyLabel.exists || errorButton.exists
+                tableView.exists || collectionView.exists || emptyLabel.exists || errorButton.exists
             },
             object: nil
         )
