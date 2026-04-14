@@ -65,37 +65,48 @@ final class DataManager {
         if case .loading = loadState { return }
 
         do {
+            print("[DataManager] Iniciando refresco…")
             try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
             // Datos GTFS estáticos: descargar solo si no están frescos
             if !isGTFSFresh() {
                 loadState = .loading("Descargando datos GTFS…")
+                print("[DataManager] Descargando GTFS ZIP…")
                 let zipData = try await downloadData(
                     from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/google_transit.zip"
                 )
+                print("[DataManager] ZIP descargado: \(zipData.count) bytes")
 
                 loadState = .loading("Descomprimiendo datos GTFS…")
                 try await extractGTFS(zipData: zipData)
+                print("[DataManager] ZIP descomprimido")
+            } else {
+                print("[DataManager] GTFS en caché y vigente, omitiendo descarga")
             }
 
             // Feed RT: siempre actualizar
             loadState = .loading("Descargando datos en tiempo real…")
+            print("[DataManager] Descargando feed RT…")
             let pbData = try await downloadData(
                 from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
             )
+            print("[DataManager] Feed RT descargado: \(pbData.count) bytes")
             try pbData.write(to: pbURL)
 
             // Parsear en background
             loadState = .loading("Procesando datos…")
             let (parsed, delays) = await parseInBackground()
+            print("[DataManager] Datos parseados: \(parsed.stops.count) paradas, \(delays.count) trips RT")
 
             gtfsData = parsed
             tripDelays = delays
             lastRefresh = Date()
             version += 1
             loadState = .ready
+            print("[DataManager] Listo")
 
         } catch {
+            print("[DataManager] ERROR: \(error)")
             // Si ya hay datos cargados, mantenerlos y solo marcar el error de refresh
             if gtfsData != nil {
                 loadState = .ready
@@ -106,8 +117,10 @@ final class DataManager {
                     tripDelays = cached.delays
                     version += 1
                     loadState = .ready
+                    print("[DataManager] Cargado desde caché")
                 } else {
                     loadState = .failed(error.localizedDescription)
+                    print("[DataManager] Sin caché disponible")
                 }
             }
         }

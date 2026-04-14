@@ -16,13 +16,16 @@ struct NearbyStopsView: View {
     var body: some View {
         Group {
             switch dataManager.loadState {
+            case .idle:
+                loadingView(message: "Iniciando…")
+
             case .loading(let msg):
                 loadingView(message: msg)
 
             case .failed(let msg):
                 errorView(message: msg)
 
-            case .idle, .ready:
+            case .ready:
                 stopsListView
             }
         }
@@ -31,14 +34,19 @@ struct NearbyStopsView: View {
         .toolbar { radiusMenu }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
-        .onAppear { recompute() }
+        .onAppear {
+            recompute()
+            if dataManager.gtfsData == nil {
+                Task { await dataManager.refreshIfNeeded() }
+            }
+        }
     }
 
     // MARK: Subvistas
 
     private var stopsListView: some View {
         Group {
-            if nearbyStops.isEmpty && dataManager.gtfsData != nil {
+            if nearbyStops.isEmpty {
                 ContentUnavailableView(
                     "Sin paradas cercanas",
                     systemImage: "bus.doubledecker",

@@ -67,6 +67,9 @@ struct BusMapView: View {
         .onAppear {
             centerOnUser()
             recompute()
+            if dataManager.gtfsData == nil {
+                Task { await dataManager.refreshIfNeeded() }
+            }
         }
     }
 

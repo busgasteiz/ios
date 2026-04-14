@@ -20,7 +20,6 @@ struct BusGasteizApp: App {
                 .environment(locationManager)
                 .task {
                     locationManager.requestPermissionIfNeeded()
-                    await dataManager.refreshIfNeeded()
                 }
         }
     }
