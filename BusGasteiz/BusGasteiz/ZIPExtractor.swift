@@ -34,7 +34,7 @@ struct ZIPExtractor {
 
             let flags             = zipData.readUInt16LE(at: offset + 6)
             let compressionMethod = zipData.readUInt16LE(at: offset + 8)
-            var compressedSize    = Int(zipData.readUInt32LE(at: offset + 18))
+            let compressedSize    = Int(zipData.readUInt32LE(at: offset + 18))
             let uncompressedSize  = Int(zipData.readUInt32LE(at: offset + 22))
             let fileNameLength    = Int(zipData.readUInt16LE(at: offset + 26))
             let extraFieldLength  = Int(zipData.readUInt16LE(at: offset + 28))
@@ -89,13 +89,13 @@ struct ZIPExtractor {
         }
     }
 
-    // MARK: - Descompresión DEFLATE
+    // MARK: - Descompresión DEFLATE (raw) mediante Compression framework
 
     private nonisolated static func deflateDecompress(data: Data, uncompressedSize: Int) throws -> Data {
         guard uncompressedSize > 0 else { return Data() }
-
-        // Doble de espacio como margen de seguridad
-        let bufferSize = max(uncompressedSize + 1024, data.count * 2)
+        // COMPRESSION_DEFLATE = 0x500 (raw DEFLATE, sin cabecera zlib ni gzip)
+        let algorithm = compression_algorithm(0x500)
+        let bufferSize = max(uncompressedSize, data.count * 2)
         var result = Data(count: bufferSize)
 
         let decompressedSize: Int = result.withUnsafeMutableBytes { destPtr in
@@ -106,11 +106,10 @@ struct ZIPExtractor {
                     srcPtr.bindMemory(to: UInt8.self).baseAddress!,
                     data.count,
                     nil,
-                    COMPRESSION_DEFLATE
+                    algorithm
                 )
             }
         }
-
         guard decompressedSize > 0 else { throw ZIPExtractorError.decompressionFailed }
         result.count = decompressedSize
         return result
@@ -120,12 +119,12 @@ struct ZIPExtractor {
 // MARK: - Extensiones de lectura en little-endian
 
 private extension Data {
-    func readUInt16LE(at offset: Int) -> UInt16 {
+    nonisolated func readUInt16LE(at offset: Int) -> UInt16 {
         guard offset + 1 < count else { return 0 }
         return UInt16(self[offset]) | (UInt16(self[offset + 1]) << 8)
     }
 
-    func readUInt32LE(at offset: Int) -> UInt32 {
+    nonisolated func readUInt32LE(at offset: Int) -> UInt32 {
         guard offset + 3 < count else { return 0 }
         return UInt32(self[offset])
              | (UInt32(self[offset + 1]) << 8)

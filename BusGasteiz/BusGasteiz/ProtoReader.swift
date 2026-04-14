@@ -6,9 +6,9 @@ struct ProtoReader: Sendable {
     let data: Data
     var position: Int = 0
 
-    init(data: Data) { self.data = data }
+    nonisolated init(data: Data) { self.data = data }
 
-    mutating func readVarint() -> UInt64? {
+    nonisolated mutating func readVarint() -> UInt64? {
         var result: UInt64 = 0; var shift: UInt64 = 0
         while position < data.count {
             let byte = data[position]; position += 1
@@ -19,7 +19,7 @@ struct ProtoReader: Sendable {
         return nil
     }
 
-    mutating func readLengthDelimited() -> Data? {
+    nonisolated mutating func readLengthDelimited() -> Data? {
         guard let length = readVarint() else { return nil }
         guard length <= UInt64(Int.max) else { return nil }
         let len = Int(length)
@@ -28,12 +28,12 @@ struct ProtoReader: Sendable {
         position += len; return result
     }
 
-    mutating func readTag() -> (field: Int, wire: Int)? {
+    nonisolated mutating func readTag() -> (field: Int, wire: Int)? {
         guard let tag = readVarint() else { return nil }
         return (Int(truncatingIfNeeded: tag >> 3), Int(truncatingIfNeeded: tag & 0x7))
     }
 
-    mutating func skip(wire: Int) {
+    nonisolated mutating func skip(wire: Int) {
         switch wire {
         case 0: _ = readVarint()
         case 1: position = min(position + 8, data.count)
@@ -43,5 +43,5 @@ struct ProtoReader: Sendable {
         }
     }
 
-    var hasMore: Bool { position < data.count }
+    nonisolated var hasMore: Bool { position < data.count }
 }

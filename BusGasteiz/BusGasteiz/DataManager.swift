@@ -87,7 +87,7 @@ final class DataManager {
 
             // Parsear en background
             loadState = .loading("Procesando datos…")
-            let (parsed, delays) = try await parseInBackground()
+            let (parsed, delays) = await parseInBackground()
 
             gtfsData = parsed
             tripDelays = delays
@@ -139,10 +139,10 @@ final class DataManager {
         }.value
     }
 
-    private func parseInBackground() async throws -> (GTFSData, [String: TripDelayInfo]) {
+    private func parseInBackground() async -> (GTFSData, [String: TripDelayInfo]) {
         let folder = gtfsDir.path
         let pbPath = pbURL.path
-        return try await Task.detached(priority: .userInitiated) {
+        return await Task.detached(priority: .userInitiated) {
             let gtfs = loadGTFS(folder: folder)
             guard let pbData = FileManager.default.contents(atPath: pbPath) else {
                 return (gtfs, [:])

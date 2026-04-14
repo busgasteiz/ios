@@ -40,6 +40,7 @@ struct TripDelayInfo: Sendable {
     var generalDelay: Int32 = 0
     var stopDelays: [String: Int32] = [:]
     var vehicleLabel: String = ""
+    nonisolated init() {}
 }
 
 // MARK: - Datos GTFS agregados
@@ -52,6 +53,7 @@ struct GTFSData: Sendable {
     var stopArrivals: [String: [StopTimeEntry]] = [:]
     /// date (yyyyMMdd) → Set<service_id>
     var activeDates: [String: Set<String>] = [:]
+    nonisolated init() {}
 }
 
 // MARK: - Resultados de consulta

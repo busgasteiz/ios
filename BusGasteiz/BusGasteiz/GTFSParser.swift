@@ -1,7 +1,5 @@
 import Foundation
 
-private let madridTZ = TimeZone(identifier: "Europe/Madrid")!
-
 // MARK: - Utilidades de fecha y distancia
 
 nonisolated func haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
@@ -13,19 +11,25 @@ nonisolated func haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Doubl
 }
 
 nonisolated func dateString(_ date: Date) -> String {
-    let f = DateFormatter(); f.dateFormat = "yyyyMMdd"; f.timeZone = madridTZ
+    let f = DateFormatter()
+    f.dateFormat = "yyyyMMdd"
+    f.timeZone = TimeZone(identifier: "Europe/Madrid")
     return f.string(from: date)
 }
 
 /// Convierte (fecha de servicio yyyyMMdd, segundos desde medianoche) → Date.
 nonisolated func scheduledDate(serviceDate: String, secondsFromMidnight: Int) -> Date? {
-    let f = DateFormatter(); f.dateFormat = "yyyyMMdd"; f.timeZone = madridTZ
+    let f = DateFormatter()
+    f.dateFormat = "yyyyMMdd"
+    f.timeZone = TimeZone(identifier: "Europe/Madrid")
     guard let base = f.date(from: serviceDate) else { return nil }
     return base.addingTimeInterval(TimeInterval(secondsFromMidnight))
 }
 
 nonisolated func formatTime(_ date: Date) -> String {
-    let f = DateFormatter(); f.dateFormat = "HH:mm"; f.timeZone = madridTZ
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm"
+    f.timeZone = TimeZone(identifier: "Europe/Madrid")
     return f.string(from: date)
 }
 
