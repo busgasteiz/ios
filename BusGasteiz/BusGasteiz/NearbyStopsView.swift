@@ -11,6 +11,7 @@ struct NearbyStopsView: View {
     @AppStorage("searchRadius") private var searchRadius: Double = 200
 
     @State private var nearbyStops: [NearbyStop] = []
+    @State private var isReloading = false
 
     var body: some View {
         Group {
@@ -30,7 +31,10 @@ struct NearbyStopsView: View {
         }
         .navigationTitle("Paradas cercanas")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar { radiusMenu }
+        .toolbar {
+            radiusMenu
+            reloadButton
+        }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
         .onAppear {
@@ -111,8 +115,29 @@ struct NearbyStopsView: View {
                     }
                 }
             } label: {
-                Label("\(Int(searchRadius)) m", systemImage: "scope")
+                Text("\(Int(searchRadius)) m")
             }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var reloadButton: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                Task {
+                    isReloading = true
+                    await dataManager.forceRefresh()
+                    recompute()
+                    isReloading = false
+                }
+            } label: {
+                if isReloading {
+                    ProgressView()
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            }
+            .disabled(isReloading)
         }
     }
 

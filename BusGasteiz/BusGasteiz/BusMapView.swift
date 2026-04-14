@@ -38,7 +38,10 @@ struct BusMapView: View {
         }
         .navigationTitle("Mapa")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { reloadButton }
+        .toolbar {
+            radiusMenu
+            reloadButton
+        }
         .sheet(isPresented: $showStopSheet) {
             if let nearby = selectedStop {
                 NavigationStack {
@@ -74,6 +77,28 @@ struct BusMapView: View {
     }
 
     // MARK: Toolbar
+
+    @ToolbarContentBuilder
+    private var radiusMenu: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                ForEach([100.0, 200.0, 300.0, 500.0, 1000.0], id: \.self) { r in
+                    Button {
+                        searchRadius = r
+                        recompute()
+                    } label: {
+                        if r == searchRadius {
+                            Label("\(Int(r)) m", systemImage: "checkmark")
+                        } else {
+                            Text("\(Int(r)) m")
+                        }
+                    }
+                }
+            } label: {
+                Text("\(Int(searchRadius)) m")
+            }
+        }
+    }
 
     @ToolbarContentBuilder
     private var reloadButton: some ToolbarContent {
