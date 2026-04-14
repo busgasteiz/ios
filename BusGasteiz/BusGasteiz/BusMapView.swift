@@ -11,6 +11,7 @@ struct BusMapView: View {
     @AppStorage("searchRadius") private var searchRadius: Double = 200
 
     @State private var position: MapCameraPosition = .automatic
+    @State private var mapInteractionModes: MapInteractionModes = .all
     @State private var nearbyStops: [NearbyStop] = []
     @State private var selectedStopId: String?
     @State private var selectedStop: NearbyStop?
@@ -19,7 +20,7 @@ struct BusMapView: View {
     @State private var visibleRegion: MKCoordinateRegion?
 
     var body: some View {
-        Map(position: $position, selection: $selectedStopId) {
+        Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
                 Annotation(nearby.stop.name, coordinate: nearby.stop.coordinate, anchor: .bottom) {
@@ -151,12 +152,28 @@ struct BusMapView: View {
     // MARK: Helpers
 
     private func centerOnUser() {
+        let coord: CLLocationCoordinate2D
         if let loc = locationManager.location {
-            position = .region(MKCoordinateRegion(
-                center: loc.coordinate,
-                latitudinalMeters: searchRadius * 4,
-                longitudinalMeters: searchRadius * 4
-            ))
+            coord = loc.coordinate
+        } else {
+            coord = CLLocationCoordinate2D(latitude: 42.846718, longitude: -2.671622)
+        }
+        let region = MKCoordinateRegion(
+            center: coord,
+            latitudinalMeters: searchRadius * 4,
+            longitudinalMeters: searchRadius * 4
+        )
+        // En iOS 26 el binding MapCameraPosition no interrumpe un gesto activo:
+        // la actualización se aplaza hasta que el gesto termina.
+        // Desactivar la interacción brevemente fuerza la cancelación del gesto
+        // antes de aplicar la nueva posición, lo que permite centrar el mapa
+        // de forma inmediata aunque el usuario esté haciendo scroll.
+        mapInteractionModes = []
+        Task { @MainActor in
+            position = .region(region)
+            Task { @MainActor in
+                mapInteractionModes = .all
+            }
         }
     }
 
