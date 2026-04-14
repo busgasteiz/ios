@@ -1,5 +1,4 @@
 import SwiftUI
-import Combine
 
 // MARK: - Detalle de parada: llegadas previstas
 
@@ -147,8 +146,6 @@ struct ArrivalRowView: View {
     let arrival: UpcomingArrival
     @State private var now = Date()
 
-    private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
-
     var body: some View {
         HStack(spacing: 12) {
             // Badge de línea cuadrado
@@ -191,7 +188,12 @@ struct ArrivalRowView: View {
             }
         }
         .padding(.vertical, 4)
-        .onReceive(timer) { now = $0 }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                now = Date()
+            }
+        }
     }
 
     private var timeLabel: String {
