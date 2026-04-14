@@ -46,7 +46,7 @@ struct FavoritesView: View {
         let stopRows: [(stop: StopInfo, distance: Double, hasArrivals: Bool)] = favorites.favoriteStopIds
             .compactMap { id in
                 gtfs.stops[id].map {
-                    ($0, dist(for: $0), !(gtfs.stopArrivals[id]?.isEmpty ?? true))
+                    ($0, dist(for: $0), stopHasServiceToday(stopId: id, gtfsData: gtfs))
                 }
             }
             .sorted { $0.stop.localizedName < $1.stop.localizedName }

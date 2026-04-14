@@ -480,13 +480,26 @@ private nonisolated func parseTUEntity(_ data: Data, into delays: inout [String:
 
 // MARK: - Motor de consulta
 
+/// Devuelve true si la parada tiene al menos un viaje con servicio activo hoy
+/// (o ayer, para cubrir viajes que cruzan la medianoche).
+nonisolated func stopHasServiceToday(stopId: String, gtfsData: GTFSData) -> Bool {
+    guard let entries = gtfsData.stopArrivals[stopId] else { return false }
+    let now = Date()
+    let activeIds:    Set<String> = gtfsData.activeDates[dateString(now)]                         ?? []
+    let yesterdayIds: Set<String> = gtfsData.activeDates[dateString(now.addingTimeInterval(-86400))] ?? []
+    return entries.contains { entry in
+        guard let trip = gtfsData.trips[entry.tripId] else { return false }
+        return activeIds.contains(trip.serviceId) || yesterdayIds.contains(trip.serviceId)
+    }
+}
+
 /// Paradas dentro del radio, ordenadas por distancia.
 nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double, gtfsData: GTFSData) -> [NearbyStop] {
     gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             let d = haversine(lat1: lat, lon1: lon, lat2: stop.lat, lon2: stop.lon)
             guard d <= radius else { return nil }
-            let has = !(gtfsData.stopArrivals[stop.id]?.isEmpty ?? true)
+            let has = stopHasServiceToday(stopId: stop.id, gtfsData: gtfsData)
             return NearbyStop(stop: stop, distance: d, hasArrivals: has)
         }
         .sorted { $0.distance < $1.distance }
@@ -504,7 +517,7 @@ nonisolated func computeStopsInBounds(
             guard stop.lat >= minLat && stop.lat <= maxLat &&
                   stop.lon >= minLon && stop.lon <= maxLon else { return nil }
             let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
-            let has = !(gtfsData.stopArrivals[stop.id]?.isEmpty ?? true)
+            let has = stopHasServiceToday(stopId: stop.id, gtfsData: gtfsData)
             return NearbyStop(stop: stop, distance: d, hasArrivals: has)
         }
         .sorted { $0.distance < $1.distance }
