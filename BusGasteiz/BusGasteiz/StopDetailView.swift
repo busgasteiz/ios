@@ -7,6 +7,7 @@ struct StopDetailView: View {
 
     let stop: StopInfo
     let distance: Double
+    var starLeading: Bool = false
 
     @Environment(DataManager.self)      private var dataManager
     @Environment(FavoritesManager.self) private var favorites
@@ -66,7 +67,7 @@ struct StopDetailView: View {
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
             }
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: starLeading ? .topBarLeading : .topBarTrailing) {
                 let isFav = favorites.isStopFavorite(stop.id)
                 Button {
                     favorites.toggleStop(stop.id)
