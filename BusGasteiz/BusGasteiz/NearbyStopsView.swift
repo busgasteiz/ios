@@ -170,7 +170,7 @@ struct StopRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "bus.fill")
+            Image(systemName: nearby.stop.isTram ? "tram.fill" : "bus.fill")
                 .font(.title2)
                 .foregroundStyle(.tint)
                 .frame(width: 36)

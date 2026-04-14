@@ -24,7 +24,8 @@ struct BusMapView: View {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
                 Annotation(nearby.stop.name, coordinate: nearby.stop.coordinate, anchor: .bottom) {
-                    StopAnnotationView(isSelected: selectedStopId == nearby.stop.id)
+                    StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
+                                       isTram: nearby.stop.isTram)
                 }
                 .tag(nearby.stop.id)
             }
@@ -214,6 +215,7 @@ struct BusMapView: View {
 
 struct StopAnnotationView: View {
     let isSelected: Bool
+    var isTram: Bool = false
 
     var body: some View {
         ZStack {
@@ -222,7 +224,7 @@ struct StopAnnotationView: View {
                 .frame(width: isSelected ? 28 : 22, height: isSelected ? 28 : 22)
                 .shadow(radius: 3)
 
-            Image(systemName: "bus.fill")
+            Image(systemName: isTram ? "tram.fill" : "bus.fill")
                 .font(isSelected ? .callout : .caption2)
                 .foregroundStyle(isSelected ? .white : .accentColor)
         }

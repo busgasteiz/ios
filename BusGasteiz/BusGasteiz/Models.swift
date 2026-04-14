@@ -8,6 +8,7 @@ struct StopInfo: Identifiable, Hashable, Sendable {
     let name: String
     let lat: Double
     let lon: Double
+    var isTram: Bool = false
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: lat, longitude: lon)

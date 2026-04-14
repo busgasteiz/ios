@@ -35,6 +35,8 @@ final class DataManager {
 
     private var gtfsDir: URL { cacheDir.appendingPathComponent("GTFS_Data") }
     private var pbURL: URL { cacheDir.appendingPathComponent("tripUpdates.pb") }
+    private var euskotrenGtfsDir: URL { cacheDir.appendingPathComponent("Euskotren_Data") }
+    private var euskotrenPbURL: URL { cacheDir.appendingPathComponent("euskotrenTripUpdates.pb") }
 
     // MARK: Init
 
@@ -73,35 +75,59 @@ final class DataManager {
             print("[DataManager] Iniciando refresco…")
             try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
-            // Datos GTFS estáticos: descargar solo si no están frescos
+            // Datos GTFS estáticos Tuvisa: descargar solo si no están frescos
             if !isGTFSFresh() {
                 if !hasData { loadState = .loading("Descargando datos GTFS…") }
-                print("[DataManager] Descargando GTFS ZIP…")
+                print("[DataManager] Descargando GTFS ZIP Tuvisa…")
                 let zipData = try await downloadData(
                     from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/google_transit.zip"
                 )
                 print("[DataManager] ZIP descargado: \(zipData.count) bytes")
 
                 if !hasData { loadState = .loading("Descomprimiendo datos GTFS…") }
-                try await extractGTFS(zipData: zipData)
+                try await extractZip(zipData: zipData, to: gtfsDir)
                 print("[DataManager] ZIP descomprimido")
             } else {
-                print("[DataManager] GTFS en caché y vigente, omitiendo descarga")
+                print("[DataManager] GTFS Tuvisa en caché y vigente, omitiendo descarga")
             }
 
-            // Feed RT: siempre actualizar
+            // Datos GTFS estáticos Euskotren: descargar solo si no están frescos
+            if !isEuskoTranFresh() {
+                if !hasData { loadState = .loading("Descargando datos tranvía…") }
+                print("[DataManager] Descargando GTFS ZIP Euskotren…")
+                let tramZipData = try await downloadData(
+                    from: "https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfs_euskotren.zip"
+                )
+                print("[DataManager] ZIP Euskotren descargado: \(tramZipData.count) bytes")
+
+                if !hasData { loadState = .loading("Descomprimiendo datos tranvía…") }
+                try await extractZip(zipData: tramZipData, to: euskotrenGtfsDir)
+                print("[DataManager] ZIP Euskotren descomprimido")
+            } else {
+                print("[DataManager] GTFS Euskotren en caché y vigente, omitiendo descarga")
+            }
+
+            // Feed RT Tuvisa: siempre actualizar
             if !hasData { loadState = .loading("Descargando datos en tiempo real…") }
-            print("[DataManager] Descargando feed RT…")
+            print("[DataManager] Descargando feed RT Tuvisa…")
             let pbData = try await downloadData(
                 from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
             )
-            print("[DataManager] Feed RT descargado: \(pbData.count) bytes")
+            print("[DataManager] Feed RT Tuvisa descargado: \(pbData.count) bytes")
             try pbData.write(to: pbURL)
+
+            // Feed RT Euskotren: siempre actualizar
+            print("[DataManager] Descargando feed RT Euskotren…")
+            let euskotrenPbData = try await downloadData(
+                from: "https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfsrt_euskotren_trip_updates.pb"
+            )
+            print("[DataManager] Feed RT Euskotren descargado: \(euskotrenPbData.count) bytes")
+            try euskotrenPbData.write(to: euskotrenPbURL)
 
             // Parsear en background
             if !hasData { loadState = .loading("Procesando datos…") }
             let (parsed, delays) = await parseInBackground()
-            print("[DataManager] Datos parseados: \(parsed.stops.count) paradas, \(delays.count) trips RT")
+            print("[DataManager] Datos parseados: \(parsed.stops.count) paradas (\(parsed.stops.values.filter(\.isTram).count) tranvía), \(delays.count) trips RT")
 
             gtfsData = parsed
             tripDelays = delays
@@ -138,6 +164,13 @@ final class DataManager {
         return Date().timeIntervalSince(mod) < maxAge
     }
 
+    private func isEuskoTranFresh() -> Bool {
+        let stopsFile = euskotrenGtfsDir.appendingPathComponent("stops.txt")
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: stopsFile.path),
+              let mod = attrs[.modificationDate] as? Date else { return false }
+        return Date().timeIntervalSince(mod) < maxAge
+    }
+
     private func downloadData(from urlString: String) async throws -> Data {
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         let (data, response) = try await URLSession.shared.data(from: url)
@@ -147,25 +180,42 @@ final class DataManager {
         return data
     }
 
-    private func extractGTFS(zipData: Data) async throws {
-        let targetDir = gtfsDir
+    private func extractZip(zipData: Data, to dir: URL) async throws {
         try await Task.detached(priority: .userInitiated) {
-            if FileManager.default.fileExists(atPath: targetDir.path) {
-                try FileManager.default.removeItem(at: targetDir)
+            if FileManager.default.fileExists(atPath: dir.path) {
+                try FileManager.default.removeItem(at: dir)
             }
-            try ZIPExtractor.extract(zipData: zipData, to: targetDir)
+            try ZIPExtractor.extract(zipData: zipData, to: dir)
         }.value
     }
 
     private func parseInBackground() async -> (GTFSData, [String: TripDelayInfo]) {
         let folder = gtfsDir.path
         let pbPath = pbURL.path
+        let tramFolder = euskotrenGtfsDir.path
+        let tramPbPath = euskotrenPbURL.path
         return await Task.detached(priority: .userInitiated) {
-            let gtfs = loadGTFS(folder: folder)
-            guard let pbData = FileManager.default.contents(atPath: pbPath) else {
-                return (gtfs, [:])
+            var gtfs = loadGTFS(folder: folder)
+            let tramGtfs = loadEuskoTranGTFS(folder: tramFolder)
+            // Fusionar datos del tranvía en el GTFS principal
+            for (id, stop)     in tramGtfs.stops    { gtfs.stops[id] = stop }
+            for (id, trip)     in tramGtfs.trips    { gtfs.trips[id] = trip }
+            for (id, route)    in tramGtfs.routes   { gtfs.routes[id] = route }
+            for (id, arrivals) in tramGtfs.stopArrivals {
+                gtfs.stopArrivals[id, default: []] += arrivals
             }
-            let delays = loadTripDelays(data: pbData)
+            for (date, svcIds) in tramGtfs.activeDates {
+                gtfs.activeDates[date, default: []].formUnion(svcIds)
+            }
+
+            var delays: [String: TripDelayInfo] = [:]
+            if let data = FileManager.default.contents(atPath: pbPath) {
+                delays = loadTripDelays(data: data)
+            }
+            if let tramData = FileManager.default.contents(atPath: tramPbPath) {
+                let tramDelays = loadTripDelays(data: tramData)
+                delays.merge(tramDelays) { _, new in new }
+            }
             return (gtfs, delays)
         }.value
     }
@@ -176,13 +226,28 @@ final class DataManager {
         }
         let folder = gtfsDir.path
         let pbPath = pbURL.path
+        let tramFolder = euskotrenGtfsDir.path
+        let tramPbPath = euskotrenPbURL.path
         return await Task.detached(priority: .userInitiated) {
-            let gtfs = loadGTFS(folder: folder)
-            let delays: [String: TripDelayInfo]
+            var gtfs = loadGTFS(folder: folder)
+            let tramGtfs = loadEuskoTranGTFS(folder: tramFolder)
+            for (id, stop)     in tramGtfs.stops    { gtfs.stops[id] = stop }
+            for (id, trip)     in tramGtfs.trips    { gtfs.trips[id] = trip }
+            for (id, route)    in tramGtfs.routes   { gtfs.routes[id] = route }
+            for (id, arrivals) in tramGtfs.stopArrivals {
+                gtfs.stopArrivals[id, default: []] += arrivals
+            }
+            for (date, svcIds) in tramGtfs.activeDates {
+                gtfs.activeDates[date, default: []].formUnion(svcIds)
+            }
+
+            var delays: [String: TripDelayInfo] = [:]
             if let data = FileManager.default.contents(atPath: pbPath) {
                 delays = loadTripDelays(data: data)
-            } else {
-                delays = [:]
+            }
+            if let tramData = FileManager.default.contents(atPath: tramPbPath) {
+                let tramDelays = loadTripDelays(data: tramData)
+                delays.merge(tramDelays) { _, new in new }
             }
             return (gtfs, delays)
         }.value
