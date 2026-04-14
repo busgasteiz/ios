@@ -27,7 +27,13 @@ struct StopDetailView: View {
                 .refreshable { await refreshAndRecompute() }
             } else {
                 List(arrivals) { arrival in
-                    ArrivalRowView(arrival: arrival)
+                    NavigationLink {
+                        RouteArrivalsView(stop: stop, distance: distance,
+                                          routeShortName: arrival.routeShortName,
+                                          routeColor: arrival.routeColor)
+                    } label: {
+                        ArrivalRowView(arrival: arrival)
+                    }
                 }
                 .listStyle(.plain)
                 .refreshable { await refreshAndRecompute() }
@@ -183,5 +189,92 @@ extension Color {
         let g = Double((value >> 8)  & 0xFF) / 255
         let b = Double( value        & 0xFF) / 255
         self.init(red: r, green: g, blue: b)
+    }
+}
+
+// MARK: - Llegadas de una línea concreta en esta parada
+
+struct RouteArrivalsView: View {
+
+    let stop: StopInfo
+    let distance: Double
+    let routeShortName: String
+    let routeColor: String
+
+    @Environment(DataManager.self) private var dataManager
+
+    @State private var arrivals: [UpcomingArrival] = []
+
+    var body: some View {
+        Group {
+            if arrivals.isEmpty {
+                ScrollView {
+                    ContentUnavailableView(
+                        "Sin llegadas",
+                        systemImage: "clock",
+                        description: Text("No hay más llegadas de la línea \(routeShortName) en los próximos 60 minutos.")
+                    )
+                    .padding(.top, 60)
+                }
+                .refreshable { await refreshAndRecompute() }
+            } else {
+                List(arrivals) { arrival in
+                    ArrivalRowView(arrival: arrival)
+                }
+                .listStyle(.plain)
+                .refreshable { await refreshAndRecompute() }
+            }
+        }
+        .navigationTitle("Línea \(routeShortName)")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    Text(routeShortName)
+                        .font(.headline)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color(hex: routeColor))
+                        .foregroundStyle(contrastColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    Text(stop.name)
+                        .font(.headline)
+                }
+            }
+        }
+        .onAppear { recompute() }
+        .onChange(of: dataManager.version) { recompute() }
+    }
+
+    private func refreshAndRecompute() async {
+        async let refresh: () = dataManager.forceRefresh()
+        async let minDelay: () = Task.sleep(for: .seconds(1))
+        _ = await (try? refresh, try? minDelay)
+        recompute()
+    }
+
+    private func recompute() {
+        guard let gtfs = dataManager.gtfsData else { return }
+        let sid = stop.id
+        let dist = distance
+        let delays = dataManager.tripDelays
+        let route = routeShortName
+        Task.detached(priority: .userInitiated) {
+            let all = computeArrivals(stopId: sid, distance: dist,
+                                      gtfsData: gtfs, delays: delays)
+            let filtered = all.filter { $0.routeShortName == route }
+            await MainActor.run { arrivals = filtered }
+        }
+    }
+
+    private var contrastColor: Color {
+        let c = routeColor.lowercased()
+        if c.isEmpty || c == "ffffff" { return .black }
+        guard c.count == 6,
+              let r = UInt8(c.prefix(2), radix: 16),
+              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
+              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
+        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
+        return lum > 140 ? .black : .white
     }
 }
