@@ -493,14 +493,49 @@ nonisolated func stopHasServiceToday(stopId: String, gtfsData: GTFSData) -> Bool
     }
 }
 
+/// Calcula de una sola pasada el conjunto de stop_id que tienen al menos una
+/// llegada prevista en los próximos `windowMinutes` minutos.
+/// Reutiliza la misma lógica de fechas que computeArrivals, por lo que el
+/// resultado coincide exactamente con lo que se muestra en el detalle de parada.
+nonisolated func computeStopsWithUpcomingArrivals(gtfsData: GTFSData, windowMinutes: Int = 60) -> Set<String> {
+    let now          = Date()
+    let today        = dateString(now)
+    let yesterday    = dateString(now.addingTimeInterval(-86400))
+    let activeIds:    Set<String> = gtfsData.activeDates[today]     ?? []
+    let yesterdayIds: Set<String> = gtfsData.activeDates[yesterday] ?? []
+    let windowStart  = now.addingTimeInterval(-60)
+    let windowEnd    = now.addingTimeInterval(TimeInterval(windowMinutes * 60))
+
+    var result = Set<String>()
+    for (stopId, entries) in gtfsData.stopArrivals {
+        guard !result.contains(stopId) else { continue }   // ya confirmado
+        for entry in entries {
+            guard let trip = gtfsData.trips[entry.tripId] else { continue }
+            guard resolveServiceDate(
+                trip: trip,
+                arrivalSecs: entry.arrivalSecs,
+                activeServiceIds: activeIds,
+                yesterdayActiveIds: yesterdayIds,
+                today: today,
+                yesterday: yesterday,
+                windowStart: windowStart,
+                windowEnd: windowEnd
+            ) != nil else { continue }
+            result.insert(stopId)
+            break   // un viaje activo es suficiente
+        }
+    }
+    return result
+}
+
 /// Paradas dentro del radio, ordenadas por distancia.
 nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double, gtfsData: GTFSData) -> [NearbyStop] {
-    gtfsData.stops.values
+    let activeStops = computeStopsWithUpcomingArrivals(gtfsData: gtfsData)
+    return gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             let d = haversine(lat1: lat, lon1: lon, lat2: stop.lat, lon2: stop.lon)
             guard d <= radius else { return nil }
-            let has = stopHasServiceToday(stopId: stop.id, gtfsData: gtfsData)
-            return NearbyStop(stop: stop, distance: d, hasArrivals: has)
+            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStops.contains(stop.id))
         }
         .sorted { $0.distance < $1.distance }
 }
@@ -512,13 +547,13 @@ nonisolated func computeStopsInBounds(
     refLat: Double, refLon: Double,
     gtfsData: GTFSData
 ) -> [NearbyStop] {
-    gtfsData.stops.values
+    let activeStops = computeStopsWithUpcomingArrivals(gtfsData: gtfsData)
+    return gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             guard stop.lat >= minLat && stop.lat <= maxLat &&
                   stop.lon >= minLon && stop.lon <= maxLon else { return nil }
             let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
-            let has = stopHasServiceToday(stopId: stop.id, gtfsData: gtfsData)
-            return NearbyStop(stop: stop, distance: d, hasArrivals: has)
+            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStops.contains(stop.id))
         }
         .sorted { $0.distance < $1.distance }
 }

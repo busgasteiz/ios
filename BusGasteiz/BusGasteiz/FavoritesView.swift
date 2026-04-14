@@ -43,11 +43,10 @@ struct FavoritesView: View {
     @ViewBuilder
     private func favoritesList(gtfs: GTFSData) -> some View {
         // Construye las listas de favoritos resueltos contra el GTFS
+        let activeStops = computeStopsWithUpcomingArrivals(gtfsData: gtfs)
         let stopRows: [(stop: StopInfo, distance: Double, hasArrivals: Bool)] = favorites.favoriteStopIds
             .compactMap { id in
-                gtfs.stops[id].map {
-                    ($0, dist(for: $0), stopHasServiceToday(stopId: id, gtfsData: gtfs))
-                }
+                gtfs.stops[id].map { ($0, dist(for: $0), activeStops.contains(id)) }
             }
             .sorted { $0.stop.localizedName < $1.stop.localizedName }
 
