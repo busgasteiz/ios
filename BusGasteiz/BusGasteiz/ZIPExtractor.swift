@@ -21,72 +21,115 @@ enum ZIPExtractorError: Error, LocalizedError {
 
 struct ZIPExtractor {
 
+    // Entrada del directorio central (tamaños fiables aunque haya data descriptors)
+    private struct CentralDirEntry {
+        let fileName: String
+        let compressionMethod: UInt16
+        let compressedSize: Int
+        let uncompressedSize: Int
+        let localHeaderOffset: Int
+    }
+
     /// Extrae todos los archivos del ZIP (en memoria) al directorio `directory`.
+    /// Usa el directorio central del ZIP para obtener tamaños reales, lo que funciona
+    /// correctamente con ZIPs que usan data descriptors (flag bit 3).
     nonisolated static func extract(zipData: Data, to directory: URL) throws {
+        let entries = try parseCentralDirectory(zipData: zipData)
+        print("[ZIPExtractor] \(entries.count) entradas en el directorio central")
+
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        var offset = 0
 
-        while offset + 30 <= zipData.count {
-            let sig = zipData.readUInt32LE(at: offset)
+        for entry in entries {
+            guard !entry.fileName.isEmpty, !entry.fileName.hasSuffix("/") else { continue }
 
-            // Firma de cabecera local: PK\x03\x04
-            guard sig == 0x04034b50 else { break }
+            let localOffset = entry.localHeaderOffset
+            guard localOffset + 30 <= zipData.count,
+                  zipData.readUInt32LE(at: localOffset) == 0x04034b50 else { continue }
 
-            let flags             = zipData.readUInt16LE(at: offset + 6)
-            let compressionMethod = zipData.readUInt16LE(at: offset + 8)
-            let compressedSize    = Int(zipData.readUInt32LE(at: offset + 18))
-            let uncompressedSize  = Int(zipData.readUInt32LE(at: offset + 22))
-            let fileNameLength    = Int(zipData.readUInt16LE(at: offset + 26))
-            let extraFieldLength  = Int(zipData.readUInt16LE(at: offset + 28))
+            let localFnLen    = Int(zipData.readUInt16LE(at: localOffset + 26))
+            let localExtraLen = Int(zipData.readUInt16LE(at: localOffset + 28))
+            let dataStart     = localOffset + 30 + localFnLen + localExtraLen
 
-            let headerSize = 30 + fileNameLength + extraFieldLength
-            guard offset + headerSize <= zipData.count else { break }
+            guard dataStart + entry.compressedSize <= zipData.count else {
+                throw ZIPExtractorError.truncatedEntry(entry.fileName)
+            }
 
-            let fileNameData = zipData[offset + 30 ..< offset + 30 + fileNameLength]
-            let fileName = String(data: fileNameData, encoding: .utf8)
-                        ?? String(data: fileNameData, encoding: .isoLatin1)
+            let compressedData = zipData[dataStart ..< dataStart + entry.compressedSize]
+            let fileURL = directory.appendingPathComponent(entry.fileName)
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+
+            switch entry.compressionMethod {
+            case 0:  // Stored
+                try Data(compressedData).write(to: fileURL)
+            case 8:  // Deflate
+                let decompressed = try deflateDecompress(
+                    data: Data(compressedData),
+                    uncompressedSize: entry.uncompressedSize
+                )
+                try decompressed.write(to: fileURL)
+            default:
+                throw ZIPExtractorError.unsupportedCompressionMethod(entry.compressionMethod)
+            }
+        }
+    }
+
+    // MARK: - Lectura del directorio central
+
+    private nonisolated static func parseCentralDirectory(zipData: Data) throws -> [CentralDirEntry] {
+        guard zipData.count >= 22 else { throw ZIPExtractorError.invalidSignature }
+
+        // Buscar EOCD (End of Central Directory) desde el final
+        var eocdOffset = -1
+        let searchStart = max(0, zipData.count - 22 - 65535)
+        for i in stride(from: zipData.count - 22, through: searchStart, by: -1) {
+            if zipData.readUInt32LE(at: i) == 0x06054b50 {
+                eocdOffset = i
+                break
+            }
+        }
+        guard eocdOffset >= 0 else { throw ZIPExtractorError.invalidSignature }
+
+        let cdStart = Int(zipData.readUInt32LE(at: eocdOffset + 16))
+        let cdSize  = Int(zipData.readUInt32LE(at: eocdOffset + 12))
+        guard cdStart >= 0, cdStart + cdSize <= zipData.count else {
+            throw ZIPExtractorError.invalidSignature
+        }
+
+        var entries: [CentralDirEntry] = []
+        var offset = cdStart
+        let cdEnd = cdStart + cdSize
+
+        while offset + 46 <= cdEnd {
+            guard zipData.readUInt32LE(at: offset) == 0x02014b50 else { break }
+
+            let method          = zipData.readUInt16LE(at: offset + 10)
+            let compressedSize  = Int(zipData.readUInt32LE(at: offset + 20))
+            let uncompressedSize = Int(zipData.readUInt32LE(at: offset + 24))
+            let fnLen           = Int(zipData.readUInt16LE(at: offset + 28))
+            let extraLen        = Int(zipData.readUInt16LE(at: offset + 30))
+            let commentLen      = Int(zipData.readUInt16LE(at: offset + 32))
+            let localOffset     = Int(zipData.readUInt32LE(at: offset + 42))
+
+            let fnData = zipData[offset + 46 ..< min(offset + 46 + fnLen, zipData.count)]
+            let fileName = String(data: fnData, encoding: .utf8)
+                        ?? String(data: fnData, encoding: .isoLatin1)
                         ?? ""
 
-            let dataOffset = offset + headerSize
+            entries.append(CentralDirEntry(
+                fileName: fileName,
+                compressionMethod: method,
+                compressedSize: compressedSize,
+                uncompressedSize: uncompressedSize,
+                localHeaderOffset: localOffset
+            ))
 
-            // Bit 3 de flags: sizes en cabecera local pueden ser 0; están tras los datos.
-            // En ese caso saltamos la entrada (no es habitual en ZIPs estáticos de GTFS).
-            let hasDataDescriptor = (flags & 0x08) != 0
-            if hasDataDescriptor && compressedSize == 0 {
-                offset = dataOffset
-                continue
-            }
-
-            guard dataOffset + compressedSize <= zipData.count else {
-                throw ZIPExtractorError.truncatedEntry(fileName)
-            }
-
-            if !fileName.isEmpty && !fileName.hasSuffix("/") {
-                let compressedData = zipData[dataOffset ..< dataOffset + compressedSize]
-                let fileURL = directory.appendingPathComponent(fileName)
-                try FileManager.default.createDirectory(
-                    at: fileURL.deletingLastPathComponent(),
-                    withIntermediateDirectories: true
-                )
-
-                switch compressionMethod {
-                case 0:  // Stored
-                    try Data(compressedData).write(to: fileURL)
-
-                case 8:  // Deflate
-                    let decompressed = try deflateDecompress(
-                        data: Data(compressedData),
-                        uncompressedSize: uncompressedSize
-                    )
-                    try decompressed.write(to: fileURL)
-
-                default:
-                    throw ZIPExtractorError.unsupportedCompressionMethod(compressionMethod)
-                }
-            }
-
-            offset = dataOffset + compressedSize
+            offset += 46 + fnLen + extraLen + commentLen
         }
+
+        return entries
     }
 
     // MARK: - Descompresión DEFLATE (raw) mediante Compression framework
@@ -95,7 +138,7 @@ struct ZIPExtractor {
         guard uncompressedSize > 0 else { return Data() }
         // COMPRESSION_DEFLATE = 0x500 (raw DEFLATE, sin cabecera zlib ni gzip)
         let algorithm = compression_algorithm(0x500)
-        let bufferSize = max(uncompressedSize, data.count * 2)
+        let bufferSize = max(uncompressedSize, data.count * 4)
         var result = Data(count: bufferSize)
 
         let decompressedSize: Int = result.withUnsafeMutableBytes { destPtr in
