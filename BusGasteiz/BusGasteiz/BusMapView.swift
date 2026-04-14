@@ -86,11 +86,21 @@ struct BusMapView: View {
 
     @ToolbarContentBuilder
     private var locationButton: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                centerOnUser()
-            } label: {
-                Image(systemName: "location.fill")
+        if #available(iOS 26, *) {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    centerOnUser()
+                } label: {
+                    Image(systemName: "location.fill")
+                }
+            }
+        } else {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    centerOnUser()
+                } label: {
+                    Image(systemName: "location.fill")
+                }
             }
         }
     }
