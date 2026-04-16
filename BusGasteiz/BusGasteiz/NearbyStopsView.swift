@@ -72,6 +72,7 @@ struct NearbyStopsView: View {
                         showingAbout = true
                     } label: {
                         Image(systemName: "info.circle")
+                            .font(.body)
                             .frame(maxWidth: .infinity)
                             .foregroundStyle(.secondary)
                             .padding(.top, 20)
