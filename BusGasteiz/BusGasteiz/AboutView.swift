@@ -23,6 +23,13 @@ struct AboutView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                // ── Política de privacidad ─────────────────────────────────
+                Section("Privacy Policy") {
+                    Text("BusGasteiz does not collect, store or share any personal data of any kind.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 // ── Licencia de la app ─────────────────────────────────────
                 Section("App License") {
                     Link(destination: URL(string: "https://www.apache.org/licenses/LICENSE-2.0")!) {
@@ -60,11 +67,6 @@ struct AboutView: View {
                         name: "Autumn Rainbow – COLOURlovers",
                         license: "CC BY-NC-SA",
                         url: URL(string: "http://www.colourlovers.com/palette/3240116/%E2%80%A2Autumn_Rainbow%E2%80%A2")!
-                    )
-                    DataSourceRow(
-                        name: "Rainbow To Me – COLOURlovers",
-                        license: "CC BY-NC-SA",
-                        url: URL(string: "http://www.colourlovers.com/palette/819694/Rainbow_To_Me")!
                     )
                 }
             }

@@ -171,6 +171,23 @@
         }
       }
     },
+    "BusGasteiz does not collect, store or share any personal data of any kind.": {
+      "comment": "Privacy policy body text in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BusGasteiz no recopila, almacena ni comparte ningún tipo de dato personal."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BusGasteiz-ek ez du datu pertsonalik biltzen, gordetzen edo partekatzen."
+          }
+        }
+      }
+    },
     "BusGasteiz is a viewer of publicly available open data from official sources. It is not affiliated with any transport operator or public authority. The app is provided as-is, without warranty of any kind, express or implied.": {
       "comment": "Terms of service body text in the about screen",
       "localizations": {
@@ -609,6 +626,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Orain"
+          }
+        }
+      }
+    },
+    "Privacy Policy": {
+      "comment": "Section header for the privacy policy in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Política de privacidad"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pribatutasun-politika"
           }
         }
       }
