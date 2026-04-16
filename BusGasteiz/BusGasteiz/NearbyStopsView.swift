@@ -71,7 +71,7 @@ struct NearbyStopsView: View {
                     Button {
                         showingAbout = true
                     } label: {
-                        Label("About BusGasteiz", systemImage: "info.circle")
+                        Image(systemName: "info.circle")
                             .frame(maxWidth: .infinity)
                             .foregroundStyle(.secondary)
                             .padding(.top, 20)
