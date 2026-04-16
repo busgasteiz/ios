@@ -79,11 +79,15 @@ struct NearbyStopsView: View {
                     Button {
                         showingAbout = true
                     } label: {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 22))
-                            .frame(maxWidth: .infinity)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 20)
+                        VStack(spacing: 4) {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 22))
+                            Text("About BusGasteiz")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.accent.opacity(0.6))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
                     }
                     .buttonStyle(.borderless)
                     .listRowSeparator(.hidden, edges: .bottom)
