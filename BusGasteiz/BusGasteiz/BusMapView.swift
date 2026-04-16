@@ -56,7 +56,7 @@ struct BusMapView: View {
                     StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: true)
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
-                                Button("Close") { showStopSheet = false }
+                                SheetCloseButton { showStopSheet = false }
                             }
                         }
                 }
