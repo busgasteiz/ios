@@ -1,279 +1,822 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld m" : {
-      "comment" : "Distance in metres",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lld m" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lld m" } }
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld m": {
+      "comment": "Distance in metres",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld m"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld m"
+          }
+        }
       }
     },
-    "%lld min" : {
-      "comment" : "Minutes countdown on arrival row",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } }
+    "%lld min": {
+      "comment": "Minutes countdown on arrival row",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
+          }
+        }
       }
     },
-    "1 min" : {
-      "comment" : "Exactly one minute on arrival countdown",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "1 min" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "1 min" } }
+    "%lldh": {
+      "comment": "Hours countdown (whole hours, no minutes) on arrival row",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldh"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldh"
+          }
+        }
       }
     },
-    "Bus" : {
-      "comment" : "Transport type label",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autobús" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Autobusa" } }
+    "%lldh %lldm": {
+      "comment": "Hours and minutes countdown on arrival row",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldh %lldm"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldh %lldm"
+          }
+        }
       }
     },
-    "Close" : {
-      "comment" : "Button to dismiss the map stop sheet",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cerrar" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Itxi" } }
+    "1 min": {
+      "comment": "Exactly one minute on arrival countdown",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 min"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 min"
+          }
+        }
       }
     },
-    "Downloading GTFS data…" : {
-      "comment" : "Loading state shown while fetching bus GTFS feed",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Descargando datos GTFS…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "GTFS datuak deskargatzen…" } }
+    "About": {
+      "comment": "Navigation title for the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplikazioaz"
+          }
+        }
       }
     },
-    "Downloading real-time data…" : {
-      "comment" : "Loading state shown while fetching RT protobuf feeds",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Descargando datos en tiempo real…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Denbora errealeko datuak deskargatzen…" } }
+    "About BusGasteiz": {
+      "comment": "Label for the info button at the bottom of the stops list",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de BusGasteiz"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BusGasteiz-i buruz"
+          }
+        }
       }
     },
-    "Downloading tram data…" : {
-      "comment" : "Loading state shown while fetching Euskotren GTFS feed",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Descargando datos tranvía…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Tranbia-datuak deskargatzen…" } }
+    "Apache License 2.0": {
+      "comment": "App licence name shown in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencia Apache 2.0"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apache 2.0 lizentzia"
+          }
+        }
       }
     },
-    "Error Loading Data" : {
-      "comment" : "Title of the error state view",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Error al cargar datos" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Errorea datuak kargatzean" } }
+    "App License": {
+      "comment": "Section header for the app licence in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencia de la aplicación"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplikazioaren lizentzia"
+          }
+        }
       }
     },
-    "Extracting GTFS data…" : {
-      "comment" : "Loading state shown while unzipping bus GTFS feed",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Descomprimiendo datos GTFS…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "GTFS datuak deskonprimatzen…" } }
+    "Bus": {
+      "comment": "Transport type label",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autobús"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autobusa"
+          }
+        }
       }
     },
-    "Extracting tram data…" : {
-      "comment" : "Loading state shown while unzipping Euskotren GTFS feed",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Descomprimiendo datos tranvía…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Tranbia-datuak deskonprimatzen…" } }
+    "BusGasteiz is a viewer of publicly available open data from official sources. It is not affiliated with any transport operator or public authority. The app is provided as-is, without warranty of any kind, express or implied.": {
+      "comment": "Terms of service body text in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BusGasteiz es un visualizador de datos abiertos disponibles públicamente en fuentes oficiales. No tiene ninguna relación con ningún operador de transporte ni autoridad pública. La aplicación se ofrece tal cual, sin ningún tipo de garantía, explícita o implícita."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BusGasteiz iturri ofizialetako publikoki eskuragarri dauden datu irekien ikustaile bat da. Ez du loturarik garraio-operadore edo agintaritza publikoekin. Aplikazioa dagoela bezala eskaintzen da, inongo bermerik gabe, esplizitu edo inplizitu."
+          }
+        }
       }
     },
-    "Favorite" : {
-      "comment" : "Swipe action to mark a route as favourite",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Favorito" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Gogokoa" } }
+    "Close": {
+      "comment": "Button to dismiss the map stop sheet",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Itxi"
+          }
+        }
       }
     },
-    "Favorite stop" : {
-      "comment" : "Distance label shown when the user has no location",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Parada favorita" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Geltoki gogokoa" } }
+    "Color Palettes": {
+      "comment": "Section header for colour palette attributions in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paletas de colores"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kolore-paleta"
+          }
+        }
       }
     },
-    "Favorites" : {
-      "comment" : "Tab label and navigation title for the favourites screen",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Favoritos" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Gogokoak" } }
+    "Data Sources": {
+      "comment": "Section header for data source attributions in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuentes de datos"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datu-iturriak"
+          }
+        }
       }
     },
-    "Line %@" : {
-      "comment" : "Navigation title for a single route detail view; %@ is the route short name",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Línea %@" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%@ lerroa" } }
+    "Downloading GTFS data…": {
+      "comment": "Loading state shown while fetching bus GTFS feed",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando datos GTFS…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GTFS datuak deskargatzen…"
+          }
+        }
       }
     },
-    "Lines" : {
-      "comment" : "Section header for favourite routes",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Líneas" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Lineak" } }
+    "Downloading real-time data…": {
+      "comment": "Loading state shown while fetching RT protobuf feeds",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando datos en tiempo real…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denbora errealeko datuak deskargatzen…"
+          }
+        }
       }
     },
-    "Live" : {
-      "comment" : "Badge shown on arrivals with real-time data",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tiempo real" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Denbora errealean" } }
+    "Downloading tram data…": {
+      "comment": "Loading state shown while fetching Euskotren GTFS feed",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando datos tranvía…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tranbia-datuak deskargatzen…"
+          }
+        }
       }
     },
-    "Loading data…" : {
-      "comment" : "Spinner text while GTFS data is still loading",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cargando datos…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Datuak kargatzen…" } }
+    "Error Loading Data": {
+      "comment": "Title of the error state view",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error al cargar datos"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Errorea datuak kargatzean"
+          }
+        }
       }
     },
-    "Map" : {
-      "comment" : "Tab label and navigation title for the map screen",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mapa" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Mapa" } }
+    "Extracting GTFS data…": {
+      "comment": "Loading state shown while unzipping bus GTFS feed",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descomprimiendo datos GTFS…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GTFS datuak deskonprimatzen…"
+          }
+        }
       }
     },
-    "Nearby Stops" : {
-      "comment" : "Navigation title for the nearby stops list",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Paradas cercanas" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Inguruko geltokiak" } }
+    "Extracting tram data…": {
+      "comment": "Loading state shown while unzipping Euskotren GTFS feed",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descomprimiendo datos tranvía…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tranbia-datuak deskonprimatzen…"
+          }
+        }
       }
     },
-    "No Arrivals" : {
-      "comment" : "Empty-state title when no arrivals are found",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sin llegadas" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Iristerapenik ez" } }
+    "Favorite": {
+      "comment": "Swipe action to mark a route as favourite",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorito"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gogokoa"
+          }
+        }
       }
     },
-    "No Favorites" : {
-      "comment" : "Empty-state title when the favourites list is empty",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sin favoritos" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Gogoko gabe" } }
+    "Favorite stop": {
+      "comment": "Distance label shown when the user has no location",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parada favorita"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geltoki gogokoa"
+          }
+        }
       }
     },
-    "No Nearby Stops" : {
-      "comment" : "Empty-state title when no stops are within the search radius",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sin paradas cercanas" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Inguruko geltokirik ez" } }
+    "Favorites": {
+      "comment": "Tab label and navigation title for the favourites screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favoritos"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gogokoak"
+          }
+        }
       }
     },
-    "No more arrivals of line %@ in the next 60 minutes." : {
-      "comment" : "Empty-state description in the route arrivals view; %@ is the route short name",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No hay más llegadas de la línea %@ en los próximos 60 minutos." } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Ez dago %@ linearen iristerapenik hurrengo 60 minutuetan." } }
+    "Line %@": {
+      "comment": "Navigation title for a single route detail view; %@ is the route short name",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Línea %@"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ lerroa"
+          }
+        }
       }
     },
-    "No scheduled arrivals in the next 60 minutes." : {
-      "comment" : "Empty-state description on the stop detail view",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No hay llegadas previstas en los próximos 60 minutos." } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Ez dago iragarritako iristerapenik hurrengo 60 minutuetan." } }
+    "Lines": {
+      "comment": "Section header for favourite routes",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Líneas"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lineak"
+          }
+        }
       }
     },
-    "Now" : {
-      "comment" : "Countdown label when the bus is arriving now",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Ahora" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Orain" } }
+    "Live": {
+      "comment": "Badge shown on arrivals with real-time data",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiempo real"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denbora errealean"
+          }
+        }
       }
     },
-    "Processing data…" : {
-      "comment" : "Loading state shown while parsing GTFS data",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Procesando datos…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Datuak prozesatzen…" } }
+    "Loading data…": {
+      "comment": "Spinner text while GTFS data is still loading",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando datos…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datuak kargatzen…"
+          }
+        }
       }
     },
-    "Remove" : {
-      "comment" : "Swipe action to remove a route from favourites",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Quitar" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Kendu" } }
+    "Map": {
+      "comment": "Tab label and navigation title for the map screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapa"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapa"
+          }
+        }
       }
     },
-    "Retry" : {
-      "comment" : "Button to retry a failed data load",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reintentar" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Saiatu berriro" } }
+    "Nearby Stops": {
+      "comment": "Navigation title for the nearby stops list",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paradas cercanas"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inguruko geltokiak"
+          }
+        }
       }
     },
-    "Sch. %@ • %@" : {
-      "comment" : "Scheduled time and delay badge on an arrival row; first %@ is the scheduled HH:mm, second %@ is the delay string e.g. +2m30s",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Prog. %@ • %@" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Ord. %@ • %@" } }
+    "Next scheduled services": {
+      "comment": "Section header when showing upcoming services beyond the 60-minute window",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próximos servicios"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hurrengo zerbitzuak"
+          }
+        }
       }
     },
-    "Scheduled" : {
-      "comment" : "Badge shown on arrivals based on timetable only",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Horario previsto" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Ordutegi aurreikusia" } }
+    "No Arrivals": {
+      "comment": "Empty-state title when no arrivals are found",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin llegadas"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iristerapenik ez"
+          }
+        }
       }
     },
-    "Starting up…" : {
-      "comment" : "Initial loading state before any data fetch begins",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Iniciando…" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Abian jartzen…" } }
+    "No Favorites": {
+      "comment": "Empty-state title when the favourites list is empty",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin favoritos"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gogoko gabe"
+          }
+        }
       }
     },
-    "Stops" : {
-      "comment" : "Tab label, navigation title and section header for stops",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Paradas" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Geltokiak" } }
+    "No Nearby Stops": {
+      "comment": "Empty-state title when no stops are within the search radius",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin paradas cercanas"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inguruko geltokirik ez"
+          }
+        }
       }
     },
-    "Tap the star on a stop or line to save it here." : {
-      "comment" : "Empty-state description on the favourites screen",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Toca la estrella en una parada o línea para guardarla aquí." } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Sakatu izarra geltoki edo linea batean hemen gordetzeko." } }
+    "No more arrivals of line %@ in the next 60 minutes.": {
+      "comment": "Empty-state description in the route arrivals view; %@ is the route short name",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay más llegadas de la línea %@ en los próximos 60 minutos."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ez dago %@ linearen iristerapenik hurrengo 60 minutuetan."
+          }
+        }
       }
     },
-    "There are no stops within %lld m.\nIncrease the search radius." : {
-      "comment" : "Empty-state description when no stops are nearby; %lld is the current radius in metres",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No hay paradas en un radio de %lld m.\nAumenta el radio de búsqueda." } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lld m-ko erradio batean ez dago geltokirik.\nHanditu bilaketa-erradioa." } }
+    "No scheduled arrivals in the next 60 minutes.": {
+      "comment": "Empty-state description on the stop detail view",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay llegadas previstas en los próximos 60 minutos."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ez dago iragarritako iristerapenik hurrengo 60 minutuetan."
+          }
+        }
       }
     },
-    "Tram" : {
-      "comment" : "Transport type label for tram",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tranvía" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Tranbia" } }
+    "Now": {
+      "comment": "Countdown label when the bus is arriving now",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orain"
+          }
+        }
       }
     },
-    "%lldh" : {
-      "comment" : "Hours countdown (whole hours, no minutes) on arrival row",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lldh" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lldh" } }
+    "Processing data…": {
+      "comment": "Loading state shown while parsing GTFS data",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Procesando datos…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datuak prozesatzen…"
+          }
+        }
       }
     },
-    "%lldh %lldm" : {
-      "comment" : "Hours and minutes countdown on arrival row",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lldh %lldm" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "%lldh %lldm" } }
+    "Remove": {
+      "comment": "Swipe action to remove a route from favourites",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendu"
+          }
+        }
       }
     },
-    "Next scheduled services" : {
-      "comment" : "Section header when showing upcoming services beyond the 60-minute window",
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Próximos servicios" } },
-        "eu" : { "stringUnit" : { "state" : "translated", "value" : "Hurrengo zerbitzuak" } }
+    "Retry": {
+      "comment": "Button to retry a failed data load",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saiatu berriro"
+          }
+        }
+      }
+    },
+    "Sch. %@ • %@": {
+      "comment": "Scheduled time and delay badge on an arrival row; first %@ is the scheduled HH:mm, second %@ is the delay string e.g. +2m30s",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prog. %@ • %@"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ord. %@ • %@"
+          }
+        }
+      }
+    },
+    "Scheduled": {
+      "comment": "Badge shown on arrivals based on timetable only",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horario previsto"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordutegi aurreikusia"
+          }
+        }
+      }
+    },
+    "Starting up…": {
+      "comment": "Initial loading state before any data fetch begins",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciando…"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abian jartzen…"
+          }
+        }
+      }
+    },
+    "Stops": {
+      "comment": "Tab label, navigation title and section header for stops",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paradas"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geltokiak"
+          }
+        }
+      }
+    },
+    "Tap the star on a stop or line to save it here.": {
+      "comment": "Empty-state description on the favourites screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca la estrella en una parada o línea para guardarla aquí."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sakatu izarra geltoki edo linea batean hemen gordetzeko."
+          }
+        }
+      }
+    },
+    "Terms of Service": {
+      "comment": "Section header for terms of service in the about screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Términos de servicio"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zerbitzu-baldintzak"
+          }
+        }
+      }
+    },
+    "There are no stops within %lld m.\nIncrease the search radius.": {
+      "comment": "Empty-state description when no stops are nearby; %lld is the current radius in metres",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay paradas en un radio de %lld m.\nAumenta el radio de búsqueda."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld m-ko erradio batean ez dago geltokirik.\nHanditu bilaketa-erradioa."
+          }
+        }
+      }
+    },
+    "Tram": {
+      "comment": "Transport type label for tram",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tranvía"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tranbia"
+          }
+        }
+      }
+    },
+    "© 2026 Ion Jaureguialzo Sarasola. Todos los derechos reservados.": {
+      "comment": "Copyright notice",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 Ion Jaureguialzo Sarasola. Todos los derechos reservados."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 Ion Jaureguialzo Sarasola. Eskubide guztiak erreserbatuta."
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
