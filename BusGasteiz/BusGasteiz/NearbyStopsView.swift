@@ -12,6 +12,7 @@ struct NearbyStopsView: View {
 
     @State private var nearbyStops: [NearbyStop] = []
     @State private var isReloading = false
+    @State private var showingAbout = false
 
     var body: some View {
         Group {
@@ -56,12 +57,24 @@ struct NearbyStopsView: View {
                     description: Text("There are no stops within \(Int(searchRadius)) m.\nIncrease the search radius.")
                 )
             } else {
-                List(nearbyStops) { nearby in
-                    NavigationLink {
-                        StopDetailView(stop: nearby.stop, distance: nearby.distance)
-                    } label: {
-                        StopRowView(nearby: nearby)
+                List {
+                    ForEach(nearbyStops) { nearby in
+                        NavigationLink {
+                            StopDetailView(stop: nearby.stop, distance: nearby.distance)
+                        } label: {
+                            StopRowView(nearby: nearby)
+                        }
                     }
+
+                    Button {
+                        showingAbout = true
+                    } label: {
+                        Label("About BusGasteiz", systemImage: "info.circle")
+                            .frame(maxWidth: .infinity)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .listRowSeparator(.hidden, edges: .bottom)
                 }
                 .listStyle(.plain)
                 .refreshable {
@@ -71,6 +84,9 @@ struct NearbyStopsView: View {
                     async let minDelay: () = Task.sleep(for: .seconds(1))
                     _ = await (refresh, try? minDelay)
                     recompute()
+                }
+                .sheet(isPresented: $showingAbout) {
+                    AboutView()
                 }
             }
         }
