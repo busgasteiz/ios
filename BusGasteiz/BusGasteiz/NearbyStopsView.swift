@@ -12,6 +12,7 @@ struct NearbyStopsView: View {
 
     @State private var nearbyStops: [NearbyStop] = []
     @State private var isReloading = false
+    @State private var isLocating = false
     @State private var showingAbout = false
 
     var body: some View {
@@ -33,6 +34,7 @@ struct NearbyStopsView: View {
         .navigationTitle("Nearby Stops")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            locationButton
             radiusMenu
             reloadButton
         }
@@ -113,6 +115,39 @@ struct NearbyStopsView: View {
             }
             .buttonStyle(.borderedProminent)
         }
+    }
+
+    @ToolbarContentBuilder
+    private var locationButton: some ToolbarContent {
+        if #available(iOS 26, *) {
+            ToolbarItem(placement: .topBarTrailing) {
+                locationButtonContent
+            }
+        } else {
+            ToolbarItem(placement: .topBarLeading) {
+                locationButtonContent
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var locationButtonContent: some View {
+        Button {
+            Task {
+                isLocating = true
+                async let minDelay: () = Task.sleep(for: .seconds(1))
+                recompute()
+                _ = try? await minDelay
+                isLocating = false
+            }
+        } label: {
+            if isLocating {
+                ProgressView()
+            } else {
+                Image(systemName: "location.fill")
+            }
+        }
+        .disabled(isLocating)
     }
 
     @ToolbarContentBuilder
