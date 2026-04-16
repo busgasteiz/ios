@@ -59,6 +59,16 @@ struct BusMapView: View {
                                 SheetCloseButton { showStopSheet = false }
                             }
                         }
+                        .navigationDestination(for: AppNavDestination.self) { dest in
+                            switch dest {
+                            case .routeArrivals(let stop, let distance, let routeShortName, let routeColor):
+                                RouteArrivalsView(stop: stop, distance: distance,
+                                                  routeShortName: routeShortName,
+                                                  routeColor: routeColor)
+                            default:
+                                EmptyView()
+                            }
+                        }
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)

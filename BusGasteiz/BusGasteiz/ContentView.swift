@@ -45,14 +45,41 @@ private struct MapKitPrewarm: UIViewRepresentable {
     func updateUIView(_ uiView: MKMapView, context: Context) {}
 }
 
+// MARK: - Pestañas de la app
+
+private enum AppTab { case stops, map, favorites }
+
 // MARK: - Vista raíz
 
 struct ContentView: View {
+
+    @State private var selectedTab: AppTab = .stops
+    @State private var stopsPath = NavigationPath()
+    @State private var favoritesPath = NavigationPath()
+
+    /// Binding que detecta el toque en la pestaña ya seleccionada y resetea
+    /// su pila de navegación al primer nivel.
+    private var tabSelection: Binding<AppTab> {
+        Binding {
+            selectedTab
+        } set: { newTab in
+            if newTab == selectedTab {
+                switch newTab {
+                case .stops:     stopsPath     = NavigationPath()
+                case .favorites: favoritesPath = NavigationPath()
+                case .map:       break
+                }
+            }
+            selectedTab = newTab
+        }
+    }
+
     var body: some View {
-        TabView {
-            NavigationStack {
+        TabView(selection: tabSelection) {
+            NavigationStack(path: $stopsPath) {
                 NearbyStopsView()
             }
+            .tag(AppTab.stops)
             .tabItem {
                 Label("Stops", systemImage: "list.bullet")
             }
@@ -60,13 +87,15 @@ struct ContentView: View {
             NavigationStack {
                 BusMapView()
             }
+            .tag(AppTab.map)
             .tabItem {
                 Label("Map", systemImage: "map")
             }
 
-            NavigationStack {
+            NavigationStack(path: $favoritesPath) {
                 FavoritesView()
             }
+            .tag(AppTab.favorites)
             .tabItem {
                 Label("Favorites", systemImage: "star")
             }

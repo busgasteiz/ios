@@ -21,6 +21,15 @@ struct FavoritesView: View {
         }
         .navigationTitle("Favorites")
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(for: AppNavDestination.self) { dest in
+            switch dest {
+            case .stopDetail(let stop, let distance, let starLeading):
+                StopDetailView(stop: stop, distance: distance, starLeading: starLeading)
+            case .routeArrivals(let stop, let distance, let routeShortName, let routeColor):
+                RouteArrivalsView(stop: stop, distance: distance,
+                                  routeShortName: routeShortName, routeColor: routeColor)
+            }
+        }
     }
 
     // MARK: Subvistas
@@ -61,9 +70,8 @@ struct FavoritesView: View {
             if !stopRows.isEmpty {
                 Section("Stops") {
                     ForEach(stopRows, id: \.stop.id) { row in
-                        NavigationLink {
-                            StopDetailView(stop: row.stop, distance: row.distance)
-                        } label: {
+                        NavigationLink(value: AppNavDestination.stopDetail(
+                            stop: row.stop, distance: row.distance)) {
                             FavoriteStopRow(stop: row.stop, distance: row.distance, hasArrivals: row.hasArrivals)
                         }
                     }
@@ -76,11 +84,10 @@ struct FavoritesView: View {
             if !routeRows.isEmpty {
                 Section("Lines") {
                     ForEach(routeRows, id: \.key.id) { row in
-                        NavigationLink {
-                            RouteArrivalsView(stop: row.stop, distance: dist(for: row.stop),
-                                             routeShortName: row.key.routeShortName,
-                                             routeColor: row.color)
-                        } label: {
+                        NavigationLink(value: AppNavDestination.routeArrivals(
+                            stop: row.stop, distance: dist(for: row.stop),
+                            routeShortName: row.key.routeShortName,
+                            routeColor: row.color)) {
                             FavoriteRouteRow(routeShortName: row.key.routeShortName,
                                             routeColor: row.color,
                                             stopName: row.stop.localizedName,

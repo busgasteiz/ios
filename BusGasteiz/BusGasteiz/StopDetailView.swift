@@ -35,11 +35,10 @@ struct StopDetailView: View {
                                 .padding(.bottom, 8)
 
                             ForEach(nextArrivals) { arrival in
-                                NavigationLink {
-                                    RouteArrivalsView(stop: stop, distance: distance,
-                                                      routeShortName: arrival.routeShortName,
-                                                      routeColor: arrival.routeColor)
-                                } label: {
+                                NavigationLink(value: AppNavDestination.routeArrivals(
+                                    stop: stop, distance: distance,
+                                    routeShortName: arrival.routeShortName,
+                                    routeColor: arrival.routeColor)) {
                                     ArrivalRowView(arrival: arrival)
                                         .padding(.horizontal)
                                 }
@@ -52,11 +51,10 @@ struct StopDetailView: View {
                 .refreshable { await refreshAndRecompute() }
             } else {
                 List(arrivals) { arrival in
-                    NavigationLink {
-                        RouteArrivalsView(stop: stop, distance: distance,
-                                          routeShortName: arrival.routeShortName,
-                                          routeColor: arrival.routeColor)
-                    } label: {
+                    NavigationLink(value: AppNavDestination.routeArrivals(
+                        stop: stop, distance: distance,
+                        routeShortName: arrival.routeShortName,
+                        routeColor: arrival.routeColor)) {
                         ArrivalRowView(arrival: arrival)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {

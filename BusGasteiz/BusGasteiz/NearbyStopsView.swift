@@ -46,6 +46,15 @@ struct NearbyStopsView: View {
                 Task { await dataManager.refreshIfNeeded() }
             }
         }
+        .navigationDestination(for: AppNavDestination.self) { dest in
+            switch dest {
+            case .stopDetail(let stop, let distance, let starLeading):
+                StopDetailView(stop: stop, distance: distance, starLeading: starLeading)
+            case .routeArrivals(let stop, let distance, let routeShortName, let routeColor):
+                RouteArrivalsView(stop: stop, distance: distance,
+                                  routeShortName: routeShortName, routeColor: routeColor)
+            }
+        }
     }
 
     // MARK: Subvistas
@@ -61,9 +70,8 @@ struct NearbyStopsView: View {
             } else {
                 List {
                     ForEach(nearbyStops) { nearby in
-                        NavigationLink {
-                            StopDetailView(stop: nearby.stop, distance: nearby.distance)
-                        } label: {
+                        NavigationLink(value: AppNavDestination.stopDetail(
+                            stop: nearby.stop, distance: nearby.distance)) {
                             StopRowView(nearby: nearby)
                         }
                     }
