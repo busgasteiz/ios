@@ -72,7 +72,7 @@ struct NearbyStopsView: View {
                         Label("About BusGasteiz", systemImage: "info.circle")
                             .frame(maxWidth: .infinity)
                             .foregroundStyle(.secondary)
-                            .padding(.top, 8)
+                            .padding(.top, 20)
                     }
                     .buttonStyle(.borderless)
                     .listRowSeparator(.hidden, edges: .bottom)
