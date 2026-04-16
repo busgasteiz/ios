@@ -50,11 +50,6 @@ struct AboutView: View {
                         url: URL(string: "https://www.vitoria-gasteiz.org/wb021/was/contenidoAction.do?uid=app_j34_0022&idioma=es")!
                     )
                     DataSourceRow(
-                        name: "Ayuntamiento de Vitoria-Gasteiz – TUVISA real-time vehicle positions",
-                        license: "CC BY",
-                        url: URL(string: "https://www.vitoria-gasteiz.org/wb021/was/contenidoAction.do?uid=app_j34_0222&idioma=es")!
-                    )
-                    DataSourceRow(
                         name: "Open Data Euskadi – Moveuskadi",
                         license: "CC BY",
                         url: URL(string: "https://opendata.euskadi.eus/catalogo/-/moveuskadi-datos-de-la-red-de-transporte-publico-de-euskadi-operadores-horarios-paradas-calendario-tarifas-etc/")!
