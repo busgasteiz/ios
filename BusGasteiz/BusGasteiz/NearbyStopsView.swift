@@ -191,7 +191,9 @@ struct NearbyStopsView: View {
             Button {
                 Task {
                     isReloading = true
-                    await dataManager.forceRefresh()
+                    async let refresh: () = dataManager.forceRefresh()
+                    async let minDelay: () = Task.sleep(for: .seconds(1))
+                    _ = await (refresh, try? minDelay)
                     recompute()
                     isReloading = false
                 }

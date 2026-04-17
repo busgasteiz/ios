@@ -17,6 +17,7 @@ struct BusMapView: View {
     @State private var selectedStop: NearbyStop?
     @State private var showStopSheet = false
     @State private var isReloading = false
+    @State private var isLocating = false
     @State private var visibleRegion: MKCoordinateRegion?
     @State private var recomputeTask: Task<Void, Never>?
     /// Evita calcular anotaciones durante la animación de entrada de la pestaña.
@@ -111,21 +112,33 @@ struct BusMapView: View {
     private var locationButton: some ToolbarContent {
         if #available(iOS 26, *) {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    centerOnUser()
-                } label: {
-                    Image(systemName: "location.fill")
-                }
+                locationButtonContent
             }
         } else {
             ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    centerOnUser()
-                } label: {
-                    Image(systemName: "location.fill")
-                }
+                locationButtonContent
             }
         }
+    }
+
+    @ViewBuilder
+    private var locationButtonContent: some View {
+        Button {
+            Task {
+                isLocating = true
+                async let minDelay: () = Task.sleep(for: .seconds(1))
+                centerOnUser()
+                _ = try? await minDelay
+                isLocating = false
+            }
+        } label: {
+            if isLocating {
+                ProgressView()
+            } else {
+                Image(systemName: "location.fill")
+            }
+        }
+        .disabled(isLocating)
     }
 
     @ToolbarContentBuilder
@@ -156,7 +169,9 @@ struct BusMapView: View {
             Button {
                 Task {
                     isReloading = true
-                    await dataManager.forceRefresh()
+                    async let refresh: () = dataManager.forceRefresh()
+                    async let minDelay: () = Task.sleep(for: .seconds(1))
+                    _ = await (refresh, try? minDelay)
                     recompute()
                     isReloading = false
                 }
