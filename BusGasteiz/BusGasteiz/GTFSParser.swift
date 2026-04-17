@@ -550,6 +550,27 @@ nonisolated func computeStopsWithUpcomingArrivals(gtfsData: GTFSData, windowMinu
     return result
 }
 
+/// Líneas únicas que pasan por una parada, ordenadas numéricamente/alfabéticamente.
+nonisolated func routesForStop(stopId: String, gtfsData: GTFSData) -> [RouteTag] {
+    guard let entries = gtfsData.stopArrivals[stopId] else { return [] }
+    var seen = Set<String>()
+    var tags: [RouteTag] = []
+    for entry in entries {
+        guard let trip = gtfsData.trips[entry.tripId],
+              let route = gtfsData.routes[trip.routeId],
+              seen.insert(route.shortName).inserted else { continue }
+        tags.append(RouteTag(shortName: route.shortName, color: route.color))
+    }
+    tags.sort {
+        let a = Int($0.shortName), b = Int($1.shortName)
+        if let a, let b { return a < b }
+        if a != nil { return true }
+        if b != nil { return false }
+        return $0.shortName < $1.shortName
+    }
+    return tags
+}
+
 /// Paradas dentro del radio, ordenadas por distancia.
 nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double,
                                      gtfsData: GTFSData, activeStopIds: Set<String>) -> [NearbyStop] {
@@ -557,7 +578,9 @@ nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double,
         .compactMap { stop -> NearbyStop? in
             let d = haversine(lat1: lat, lon1: lon, lat2: stop.lat, lon2: stop.lon)
             guard d <= radius else { return nil }
-            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStopIds.contains(stop.id))
+            return NearbyStop(stop: stop, distance: d,
+                              hasArrivals: activeStopIds.contains(stop.id),
+                              routes: routesForStop(stopId: stop.id, gtfsData: gtfsData))
         }
         .sorted { $0.distance < $1.distance }
 }
@@ -575,7 +598,9 @@ nonisolated func computeStopsInBounds(
             guard stop.lat >= minLat && stop.lat <= maxLat &&
                   stop.lon >= minLon && stop.lon <= maxLon else { return nil }
             let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
-            return NearbyStop(stop: stop, distance: d, hasArrivals: activeStopIds.contains(stop.id))
+            return NearbyStop(stop: stop, distance: d,
+                              hasArrivals: activeStopIds.contains(stop.id),
+                              routes: routesForStop(stopId: stop.id, gtfsData: gtfsData))
         }
         .sorted { $0.distance < $1.distance }
 }

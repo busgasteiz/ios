@@ -246,6 +246,16 @@ struct StopRowView: View {
                 Text(nearby.stop.localizedName)
                     .font(.body)
                     .foregroundStyle(.primary)
+                if !nearby.routes.isEmpty {
+                    HStack(spacing: 4) {
+                        ForEach(nearby.routes, id: \.shortName) { route in
+                            RouteBadgeView(routeShortName: route.shortName,
+                                          colorHex: route.color,
+                                          outerSize: 26)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
                 Text(distanceLabel(nearby.distance))
                     .font(.caption)
                     .foregroundStyle(.secondary)

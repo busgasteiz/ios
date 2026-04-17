@@ -90,10 +90,18 @@ struct UpcomingArrival: Identifiable, Sendable {
     let isRealTime: Bool
 }
 
+/// Línea de autobús/tranvía resumida para mostrar en listas de paradas.
+struct RouteTag: Sendable {
+    let shortName: String
+    let color: String
+}
+
 struct NearbyStop: Identifiable, Sendable {
     let stop: StopInfo
     let distance: Double
     /// Indica si la parada tiene al menos un horario en los datos GTFS.
     let hasArrivals: Bool
+    /// Líneas que pasan por esta parada, ordenadas.
+    let routes: [RouteTag]
     var id: String { stop.id }
 }
