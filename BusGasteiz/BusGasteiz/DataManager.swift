@@ -27,6 +27,17 @@ final class DataManager {
     /// Se incrementa con cada recarga; útil para `onChange` en vistas.
     private(set) var version: Int = 0
 
+    #if DEBUG
+    private var baseServiceAlerts: ServiceAlerts = ServiceAlerts()
+    var simulateAlerts: Bool = UserDefaults.standard.bool(forKey: "debug.simulateAlerts") {
+        didSet {
+            UserDefaults.standard.set(simulateAlerts, forKey: "debug.simulateAlerts")
+            serviceAlerts = simulateAlerts ? injectSimulatedAlerts(into: baseServiceAlerts) : baseServiceAlerts
+            version += 1
+        }
+    }
+    #endif
+
     private let maxAge: TimeInterval = 10 * 60   // 10 minutos
 
     // MARK: Rutas de caché
@@ -156,7 +167,7 @@ final class DataManager {
 
             gtfsData = parsed
             tripDelays = delays
-            serviceAlerts = alerts
+            applyAlerts(alerts)
             activeStopIds = computeStopsWithUpcomingArrivals(gtfsData: parsed)
             lastRefresh = Date()
             version += 1
@@ -173,7 +184,7 @@ final class DataManager {
                 if let cached = await tryLoadFromCache() {
                     gtfsData = cached.gtfs
                     tripDelays = cached.delays
-                    serviceAlerts = cached.alerts
+                    applyAlerts(cached.alerts)
                     activeStopIds = computeStopsWithUpcomingArrivals(gtfsData: cached.gtfs)
                     version += 1
                     loadState = .ready
@@ -192,6 +203,57 @@ final class DataManager {
               let mod = attrs[.modificationDate] as? Date else { return false }
         return Date().timeIntervalSince(mod) < maxAge
     }
+
+    /// Asigna las alertas reales y, en debug, superpone las simuladas si el toggle está activo.
+    private func applyAlerts(_ alerts: ServiceAlerts) {
+        #if DEBUG
+        baseServiceAlerts = alerts
+        serviceAlerts = simulateAlerts ? injectSimulatedAlerts(into: alerts) : alerts
+        #else
+        serviceAlerts = alerts
+        #endif
+    }
+
+    #if DEBUG
+    private func injectSimulatedAlerts(into base: ServiceAlerts) -> ServiceAlerts {
+        guard let gtfs = gtfsData else { return base }
+        var result = base
+
+        let fakeAlerts: [(header: String, desc: String)] = [
+            (
+                String(localized: "[TEST] Service disruption"),
+                String(localized: "[TEST] Temporary delays due to works on the route. Estimated recovery time: 20 minutes.")
+            ),
+            (
+                String(localized: "[TEST] Route deviation"),
+                String(localized: "[TEST] The bus will follow an alternative route and will not stop at all scheduled stops.")
+            ),
+            (
+                String(localized: "[TEST] Reduced frequency"),
+                String(localized: "[TEST] Due to driver shortage, service frequency is reduced on this line today.")
+            )
+        ]
+
+        var rng = SystemRandomNumberGenerator()
+        for (stopId, _) in gtfs.stops {
+            if Double.random(in: 0..<1, using: &rng) < 0.30 {
+                let t = fakeAlerts.randomElement(using: &rng)!
+                let alert = ServiceAlert(headerText: t.header, descriptionText: t.desc)
+                result.stopAlerts[stopId, default: []].append(alert)
+                result.stopIds.insert(stopId)
+            }
+        }
+        for (routeId, _) in gtfs.routes {
+            if Double.random(in: 0..<1, using: &rng) < 0.30 {
+                let t = fakeAlerts.randomElement(using: &rng)!
+                let alert = ServiceAlert(headerText: t.header, descriptionText: t.desc)
+                result.routeAlerts[routeId, default: []].append(alert)
+                result.routeIds.insert(routeId)
+            }
+        }
+        return result
+    }
+    #endif
 
     private func isEuskoTranFresh() -> Bool {
         let stopsFile = euskotrenGtfsDir.appendingPathComponent("stops.txt")

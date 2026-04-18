@@ -4,6 +4,9 @@ import SwiftUI
 
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    @Environment(DataManager.self) private var dataManager
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -75,6 +78,22 @@ struct AboutView: View {
                         url: URL(string: "http://www.colourlovers.com/palette/3240116/%E2%80%A2Autumn_Rainbow%E2%80%A2")!
                     )
                 }
+
+                #if DEBUG
+                // ── Pruebas (solo en modo Debug) ───────────────────────────
+                Section {
+                    @Bindable var dm = dataManager
+                    Toggle(isOn: $dm.simulateAlerts) {
+                        Label("Simulate service alerts", systemImage: "exclamationmark.triangle")
+                    }
+                    .tint(.red)
+                } header: {
+                    Text("Testing")
+                } footer: {
+                    Text("Randomly assigns fake service alerts (30% probability) to stops and routes. Only visible in debug builds.")
+                        .font(.footnote)
+                }
+                #endif
             }
             .navigationTitle("About")
             .navigationBarTitleDisplayMode(.inline)
