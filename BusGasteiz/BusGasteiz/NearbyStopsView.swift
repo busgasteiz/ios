@@ -262,8 +262,7 @@ struct StopRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Button {
                 favorites.toggleStop(nearby.stop.id)
