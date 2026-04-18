@@ -17,13 +17,24 @@ struct StopInfo: Identifiable, Hashable, Sendable {
     }
 
     /// Nombre adaptado al idioma del sistema.
-    /// - Euskera: usa nameEu si está disponible, o name (Euskotren ya está en euskera)
+    /// - Euskera: usa nameEu si está disponible, o name (Euskotren ya está en euskera).
+    ///   Si el nombre en euskera no contiene ningún número pero el nombre en castellano
+    ///   termina en un número de portal, se le añade al final para mantener consistencia
+    ///   (Tuvisa omite los números de portal en las traducciones al euskera).
     /// - Castellano: usa nameEs si está disponible, o name
     /// - Otros: usa name como fallback
     var localizedName: String {
         let lang = Locale.current.language.languageCode?.identifier ?? ""
         switch lang {
-        case "eu": return nameEu ?? name
+        case "eu":
+            guard let eu = nameEu else { return name }
+            if !eu.contains(where: \.isNumber) {
+                let ref = nameEs ?? name
+                if let range = ref.range(of: #"\s+\d+$"#, options: .regularExpression) {
+                    return eu + String(ref[range])
+                }
+            }
+            return eu
         case "es": return nameEs ?? name
         default:   return name
         }
