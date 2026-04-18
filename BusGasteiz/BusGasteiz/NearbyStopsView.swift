@@ -224,9 +224,10 @@ struct NearbyStopsView: View {
         }
         let radius = appSettings.searchRadius
         let activeIds = dataManager.activeStopIds
+        let alerts = dataManager.serviceAlerts
         recomputeTask?.cancel()
         recomputeTask = Task.detached(priority: .userInitiated) {
-            let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs, activeStopIds: activeIds)
+            let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs, activeStopIds: activeIds, alerts: alerts)
             guard !Task.isCancelled else { return }
             await MainActor.run { nearbyStops = stops }
         }
@@ -241,7 +242,7 @@ struct StopRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            StopIconView(isTram: nearby.stop.isTram, size: 44, hasArrivals: nearby.hasArrivals)
+            StopIconView(isTram: nearby.stop.isTram, size: 44, hasArrivals: nearby.hasArrivals, hasAlert: nearby.hasAlert)
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -253,7 +254,8 @@ struct StopRowView: View {
                         ForEach(nearby.routes, id: \.shortName) { route in
                             RouteBadgeView(routeShortName: route.shortName,
                                           colorHex: route.color,
-                                          outerSize: 28)
+                                          outerSize: 28,
+                                          hasAlert: route.hasAlert)
                         }
                     }
                     .padding(.vertical, 2)

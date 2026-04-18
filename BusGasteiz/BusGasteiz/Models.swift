@@ -70,6 +70,15 @@ struct TripDelayInfo: Sendable {
     nonisolated init() {}
 }
 
+// MARK: - Alertas de servicio (GTFS-RT Alerts)
+
+struct ServiceAlerts: Sendable {
+    var stopIds: Set<String> = []
+    var routeIds: Set<String> = []
+    var isEmpty: Bool { stopIds.isEmpty && routeIds.isEmpty }
+    nonisolated init() {}
+}
+
 // MARK: - Datos GTFS agregados
 
 struct GTFSData: Sendable {
@@ -99,12 +108,14 @@ struct UpcomingArrival: Identifiable, Sendable {
     let delaySecs: Int32
     let vehicleLabel: String
     let isRealTime: Bool
+    var hasAlert: Bool = false
 }
 
 /// Línea de autobús/tranvía resumida para mostrar en listas de paradas.
 struct RouteTag: Sendable {
     let shortName: String
     let color: String
+    var hasAlert: Bool = false
 }
 
 struct NearbyStop: Identifiable, Sendable {
@@ -114,5 +125,6 @@ struct NearbyStop: Identifiable, Sendable {
     let hasArrivals: Bool
     /// Líneas que pasan por esta parada, ordenadas.
     let routes: [RouteTag]
+    var hasAlert: Bool = false
     var id: String { stop.id }
 }

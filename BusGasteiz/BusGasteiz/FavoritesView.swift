@@ -53,17 +53,21 @@ struct FavoritesView: View {
     private func favoritesList(gtfs: GTFSData) -> some View {
         // Construye las listas de favoritos resueltos contra el GTFS
         let activeStops = dataManager.activeStopIds
-        let stopRows: [(stop: StopInfo, distance: Double, hasArrivals: Bool)] = favorites.favoriteStopIds
+        let alerts = dataManager.serviceAlerts
+        let stopRows: [(stop: StopInfo, distance: Double, hasArrivals: Bool, hasAlert: Bool)] = favorites.favoriteStopIds
             .compactMap { id in
-                gtfs.stops[id].map { ($0, dist(for: $0), activeStops.contains(id)) }
+                gtfs.stops[id].map { ($0, dist(for: $0), activeStops.contains(id), alerts.stopIds.contains(id)) }
             }
             .sorted { $0.stop.localizedName < $1.stop.localizedName }
 
-        let routeRows: [(key: FavoritesManager.ParsedRouteKey, stop: StopInfo, color: String)] =
+        let routeRows: [(key: FavoritesManager.ParsedRouteKey, stop: StopInfo, color: String, hasAlert: Bool)] =
             favorites.parsedRouteKeys.compactMap { key in
                 guard let stop = gtfs.stops[key.stopId] else { return nil }
-                let color = gtfs.routes.values.first { $0.shortName == key.routeShortName }?.color ?? ""
-                return (key, stop, color)
+                let route = gtfs.routes.values.first(where: { $0.shortName == key.routeShortName })
+                    ?? gtfs.routes.values.first(where: { $0.shortName == String(key.routeShortName.prefix(while: { $0.isNumber })) })
+                let color = route?.color ?? ""
+                let hasAlert = route.map { alerts.routeIds.contains($0.id) } ?? false
+                return (key, stop, color, hasAlert)
             }
 
         List {
@@ -72,7 +76,8 @@ struct FavoritesView: View {
                     ForEach(stopRows, id: \.stop.id) { row in
                         NavigationLink(value: AppNavDestination.stopDetail(
                             stop: row.stop, distance: row.distance)) {
-                            FavoriteStopRow(stop: row.stop, distance: row.distance, hasArrivals: row.hasArrivals)
+                            FavoriteStopRow(stop: row.stop, distance: row.distance,
+                                           hasArrivals: row.hasArrivals, hasAlert: row.hasAlert)
                         }
                     }
                     .onDelete { indexSet in
@@ -91,7 +96,8 @@ struct FavoritesView: View {
                             FavoriteRouteRow(routeShortName: row.key.routeShortName,
                                             routeColor: row.color,
                                             stopName: row.stop.localizedName,
-                                            isTram: row.stop.isTram)
+                                            isTram: row.stop.isTram,
+                                            hasAlert: row.hasAlert)
                         }
                     }
                     .onDelete { indexSet in
@@ -118,10 +124,11 @@ struct FavoriteStopRow: View {
     let stop: StopInfo
     let distance: Double
     var hasArrivals: Bool = true
+    var hasAlert: Bool = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            StopIconView(isTram: stop.isTram, size: 44, hasArrivals: hasArrivals)
+            StopIconView(isTram: stop.isTram, size: 44, hasArrivals: hasArrivals, hasAlert: hasAlert)
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -150,11 +157,12 @@ struct FavoriteRouteRow: View {
     let routeColor: String
     let stopName: String
     let isTram: Bool
+    var hasAlert: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
             // Badge de línea cuadrado
-            RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor)
+            RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor, hasAlert: hasAlert)
                 .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 2) {

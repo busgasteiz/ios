@@ -488,6 +488,68 @@ private nonisolated func parseTUEntity(_ data: Data, into delays: inout [String:
     if !tripId.isEmpty { delays[tripId] = info }
 }
 
+// MARK: - Análisis de alertas de servicio (GTFS-RT Alerts)
+
+nonisolated func loadAlerts(data: Data) -> ServiceAlerts {
+    var alerts = ServiceAlerts()
+    var r = ProtoReader(data: data)
+    while r.hasMore {
+        guard let t = r.readTag() else { break }
+        switch t.field {
+        case 1: _ = r.readLengthDelimited()  // header, ignorar
+        case 2: if let d = r.readLengthDelimited() { parseAlertEntity(d, into: &alerts) }
+        default: r.skip(wire: t.wire)
+        }
+    }
+    return alerts
+}
+
+private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout ServiceAlerts) {
+    var r = ProtoReader(data: data)
+    var alertData: Data? = nil
+    var deleted = false
+    while r.hasMore {
+        guard let t = r.readTag() else { break }
+        switch t.field {
+        case 1: _ = r.readLengthDelimited()                           // id
+        case 2: if let v = r.readVarint() { deleted = v != 0 }        // is_deleted
+        case 5: alertData = r.readLengthDelimited()                    // Alert (campo 5, no 3)
+        default: r.skip(wire: t.wire)
+        }
+    }
+    guard !deleted, let aData = alertData else { return }
+
+    var ar = ProtoReader(data: aData)
+    while ar.hasMore {
+        guard let t = ar.readTag() else { break }
+        switch t.field {
+        case 1: _ = ar.readLengthDelimited()  // active_period, ignorar
+        case 2: if let d = ar.readLengthDelimited() { parseAlertEntitySelector(d, into: &alerts) }
+        default: ar.skip(wire: t.wire)
+        }
+    }
+}
+
+private nonisolated func parseAlertEntitySelector(_ data: Data, into alerts: inout ServiceAlerts) {
+    var r = ProtoReader(data: data)
+    while r.hasMore {
+        guard let t = r.readTag() else { break }
+        switch t.field {
+        case 2:  // route_id
+            if let d = r.readLengthDelimited(),
+               let s = String(data: d, encoding: .utf8), !s.isEmpty {
+                alerts.routeIds.insert(s)
+            }
+        case 5:  // stop_id
+            if let d = r.readLengthDelimited(),
+               let s = String(data: d, encoding: .utf8), !s.isEmpty {
+                alerts.stopIds.insert(s)
+            }
+        default: r.skip(wire: t.wire)
+        }
+    }
+}
+
 // MARK: - Motor de consulta
 
 /// Devuelve true si la parada tiene al menos un viaje con servicio activo hoy
@@ -552,7 +614,7 @@ nonisolated func computeStopsWithUpcomingArrivals(gtfsData: GTFSData, windowMinu
 
 /// Líneas únicas que pasan por una parada, incluyendo variantes (5A/5B/5C...),
 /// ordenadas numéricamente/alfabéticamente.
-nonisolated func routesForStop(stopId: String, gtfsData: GTFSData) -> [RouteTag] {
+nonisolated func routesForStop(stopId: String, gtfsData: GTFSData, alerts: ServiceAlerts = ServiceAlerts()) -> [RouteTag] {
     guard let entries = gtfsData.stopArrivals[stopId] else { return [] }
     var seen = Set<String>()
     var tags: [RouteTag] = []
@@ -562,7 +624,8 @@ nonisolated func routesForStop(stopId: String, gtfsData: GTFSData) -> [RouteTag]
         let suffix = variantSuffix(routeId: trip.routeId, headsign: trip.headsign)
         let displayName = route.shortName + (suffix ?? "")
         guard seen.insert(displayName).inserted else { continue }
-        tags.append(RouteTag(shortName: displayName, color: route.color))
+        let hasAlert = alerts.routeIds.contains(trip.routeId)
+        tags.append(RouteTag(shortName: displayName, color: route.color, hasAlert: hasAlert))
     }
     tags.sort {
         // Ordena por prefijo numérico y luego por sufijo alfabético (5 < 5A < 5B < 6).
@@ -581,14 +644,18 @@ nonisolated func routesForStop(stopId: String, gtfsData: GTFSData) -> [RouteTag]
 
 /// Paradas dentro del radio, ordenadas por distancia.
 nonisolated func computeNearbyStops(lat: Double, lon: Double, radius: Double,
-                                     gtfsData: GTFSData, activeStopIds: Set<String>) -> [NearbyStop] {
+                                     gtfsData: GTFSData, activeStopIds: Set<String>,
+                                     alerts: ServiceAlerts = ServiceAlerts()) -> [NearbyStop] {
     return gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             let d = haversine(lat1: lat, lon1: lon, lat2: stop.lat, lon2: stop.lon)
             guard d <= radius else { return nil }
+            let routeTags = routesForStop(stopId: stop.id, gtfsData: gtfsData, alerts: alerts)
+            let hasAlert = alerts.stopIds.contains(stop.id) || routeTags.contains(where: { $0.hasAlert })
             return NearbyStop(stop: stop, distance: d,
                               hasArrivals: activeStopIds.contains(stop.id),
-                              routes: routesForStop(stopId: stop.id, gtfsData: gtfsData))
+                              routes: routeTags,
+                              hasAlert: hasAlert)
         }
         .sorted { $0.distance < $1.distance }
 }
@@ -599,16 +666,20 @@ nonisolated func computeStopsInBounds(
     minLon: Double, maxLon: Double,
     refLat: Double, refLon: Double,
     gtfsData: GTFSData,
-    activeStopIds: Set<String>
+    activeStopIds: Set<String>,
+    alerts: ServiceAlerts = ServiceAlerts()
 ) -> [NearbyStop] {
     return gtfsData.stops.values
         .compactMap { stop -> NearbyStop? in
             guard stop.lat >= minLat && stop.lat <= maxLat &&
                   stop.lon >= minLon && stop.lon <= maxLon else { return nil }
             let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
+            let routeTags = routesForStop(stopId: stop.id, gtfsData: gtfsData, alerts: alerts)
+            let hasAlert = alerts.stopIds.contains(stop.id) || routeTags.contains(where: { $0.hasAlert })
             return NearbyStop(stop: stop, distance: d,
                               hasArrivals: activeStopIds.contains(stop.id),
-                              routes: routesForStop(stopId: stop.id, gtfsData: gtfsData))
+                              routes: routeTags,
+                              hasAlert: hasAlert)
         }
         .sorted { $0.distance < $1.distance }
 }
@@ -619,6 +690,7 @@ nonisolated func computeArrivals(
     distance: Double,
     gtfsData: GTFSData,
     delays: [String: TripDelayInfo],
+    alerts: ServiceAlerts = ServiceAlerts(),
     windowMinutes: Int = 60
 ) -> [UpcomingArrival] {
     guard let stop = gtfsData.stops[stopId],
@@ -669,6 +741,7 @@ nonisolated func computeArrivals(
         let route = gtfsData.routes[trip.routeId]
         let routeDisplayName = (route?.shortName ?? trip.routeId)
             + (variantSuffix(routeId: trip.routeId, headsign: trip.headsign) ?? "")
+        let hasAlert = alerts.routeIds.contains(trip.routeId) || alerts.stopIds.contains(stopId)
         arrivals.append(UpcomingArrival(
             stopId: stopId,
             stopName: stop.name,
@@ -681,7 +754,8 @@ nonisolated func computeArrivals(
             predictedTime:  predTime,
             delaySecs:      delay,
             vehicleLabel:   delayInfo?.vehicleLabel ?? "",
-            isRealTime:     isRT
+            isRealTime:     isRT,
+            hasAlert:       hasAlert
         ))
     }
 
@@ -696,6 +770,7 @@ nonisolated func computeNextArrivals(
     distance: Double,
     gtfsData: GTFSData,
     delays: [String: TripDelayInfo],
+    alerts: ServiceAlerts = ServiceAlerts(),
     daysAhead: Int = 7
 ) -> [UpcomingArrival] {
     guard let stop = gtfsData.stops[stopId],
@@ -754,6 +829,7 @@ nonisolated func computeNextArrivals(
             let predTime = schTime.addingTimeInterval(TimeInterval(delay))
 
             bestEpochByRoute[routeShortName] = epoch
+            let hasAlert = alerts.routeIds.contains(trip.routeId) || alerts.stopIds.contains(stopId)
             bestArrivalByRoute[routeShortName] = UpcomingArrival(
                 stopId: stopId,
                 stopName: stop.name,
@@ -766,7 +842,8 @@ nonisolated func computeNextArrivals(
                 predictedTime:  predTime,
                 delaySecs:      delay,
                 vehicleLabel:   delayInfo?.vehicleLabel ?? "",
-                isRealTime:     isRT
+                isRealTime:     isRT,
+                hasAlert:       hasAlert
             )
             break // este día ya da el mínimo para esta entrada; ir al siguiente entry
         }

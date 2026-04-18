@@ -116,12 +116,13 @@ struct StopDetailView: View {
         let sid = stop.id
         let dist = distance
         let delays = dataManager.tripDelays
+        let alerts = dataManager.serviceAlerts
         Task.detached(priority: .userInitiated) {
             let result = computeArrivals(stopId: sid, distance: dist,
-                                         gtfsData: gtfs, delays: delays)
+                                         gtfsData: gtfs, delays: delays, alerts: alerts)
             let next = result.isEmpty
                 ? computeNextArrivals(stopId: sid, distance: dist,
-                                      gtfsData: gtfs, delays: delays)
+                                      gtfsData: gtfs, delays: delays, alerts: alerts)
                 : []
             await MainActor.run {
                 arrivals = result
@@ -147,7 +148,8 @@ struct ArrivalRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // Badge de línea cuadrado
-            RouteBadgeView(routeShortName: arrival.routeShortName, colorHex: arrival.routeColor)
+            RouteBadgeView(routeShortName: arrival.routeShortName, colorHex: arrival.routeColor,
+                           hasAlert: arrival.hasAlert)
                 .frame(width: 52)
 
             // Destino y datos RT

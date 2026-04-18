@@ -30,7 +30,8 @@ struct BusMapView: View {
                 Annotation(nearby.stop.localizedName, coordinate: nearby.stop.coordinate, anchor: .bottom) {
                     StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
                                        isTram: nearby.stop.isTram,
-                                       hasArrivals: nearby.hasArrivals)
+                                       hasArrivals: nearby.hasArrivals,
+                                       hasAlert: nearby.hasAlert)
                 }
                 .tag(nearby.stop.id)
             }
@@ -236,13 +237,15 @@ struct BusMapView: View {
 
         recomputeTask?.cancel()
         let activeIds = dataManager.activeStopIds
+        let alerts = dataManager.serviceAlerts
         recomputeTask = Task.detached(priority: .userInitiated) {
             let stops = computeStopsInBounds(
                 minLat: minLat, maxLat: maxLat,
                 minLon: minLon, maxLon: maxLon,
                 refLat: refLat, refLon: refLon,
                 gtfsData: gtfs,
-                activeStopIds: activeIds
+                activeStopIds: activeIds,
+                alerts: alerts
             )
             guard !Task.isCancelled else { return }
             await MainActor.run { nearbyStops = stops }
@@ -256,11 +259,12 @@ struct StopAnnotationView: View {
     let isSelected: Bool
     var isTram: Bool = false
     var hasArrivals: Bool = true
+    var hasAlert: Bool = false
 
     private var size: CGFloat { isSelected ? 30 : 24 }
 
     var body: some View {
-        StopIconView(isTram: isTram, size: size, hasArrivals: hasArrivals)
+        StopIconView(isTram: isTram, size: size, hasArrivals: hasArrivals, hasAlert: hasAlert)
             .animation(.spring(duration: 0.2), value: isSelected)
     }
 }

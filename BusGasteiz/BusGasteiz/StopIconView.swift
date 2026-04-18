@@ -5,6 +5,27 @@
 
 import SwiftUI
 
+// MARK: - Badge de alerta (uso interno)
+
+private struct AlertBadge: View {
+    var size: CGFloat = 12
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white)
+                .frame(width: size + 2, height: size + 2)
+            Circle()
+                .fill(Color.red)
+                .frame(width: size, height: size)
+            Image(systemName: "exclamationmark")
+                .font(.system(size: size * 0.6, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .offset(x: 3, y: -3)
+    }
+}
+
 // MARK: - Icono circular de parada (lista y mapa)
 
 /// Icono circular con fondo sólido del color de acento, icono blanco y
@@ -16,6 +37,8 @@ struct StopIconView: View {
     var size: CGFloat = 28
     /// Si es false, el icono se muestra en gris (sin llegadas programadas).
     var hasArrivals: Bool = true
+    /// Si es true, muestra un badge rojo de advertencia arriba a la derecha.
+    var hasAlert: Bool = false
 
     private var fillColor: Color { hasArrivals ? Color.accentColor : Color(uiColor: .systemGray) }
 
@@ -37,6 +60,9 @@ struct StopIconView: View {
                 .font(.system(size: size * 0.40))
                 .foregroundStyle(.white)
         }
+        .overlay(alignment: .topTrailing) {
+            if hasAlert { AlertBadge(size: max(10, size * 0.32)) }
+        }
     }
 }
 
@@ -49,6 +75,8 @@ struct RouteBadgeView: View {
     let routeShortName: String
     let colorHex: String
     var outerSize: CGFloat = 48
+    /// Si es true, muestra un badge rojo de advertencia arriba a la derecha.
+    var hasAlert: Bool = false
 
     private var inner: CGFloat  { outerSize - 4 }
     private var radius: CGFloat { inner * 10 / 44 }
@@ -84,6 +112,9 @@ struct RouteBadgeView: View {
                 .lineLimit(1)
                 .foregroundStyle(textColor)
                 .frame(width: inner - 4)
+        }
+        .overlay(alignment: .topTrailing) {
+            if hasAlert { AlertBadge(size: max(9, outerSize * 0.27)) }
         }
     }
 }

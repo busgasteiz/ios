@@ -20,6 +20,7 @@ final class DataManager {
     var loadState: LoadState = .idle
     var gtfsData: GTFSData?
     var tripDelays: [String: TripDelayInfo] = [:]
+    var serviceAlerts: ServiceAlerts = ServiceAlerts()
     /// Set de stop_id con llegadas en los próximos 60 min. Se actualiza al cargar datos.
     var activeStopIds: Set<String> = []
     var lastRefresh: Date?
@@ -39,6 +40,8 @@ final class DataManager {
     private var pbURL: URL { cacheDir.appendingPathComponent("tripUpdates.pb") }
     private var euskotrenGtfsDir: URL { cacheDir.appendingPathComponent("Euskotren_Data") }
     private var euskotrenPbURL: URL { cacheDir.appendingPathComponent("euskotrenTripUpdates.pb") }
+    private var tuvisaAlertsPbURL: URL { cacheDir.appendingPathComponent("tuvisaAlerts.pb") }
+    private var euskotrenAlertsPbURL: URL { cacheDir.appendingPathComponent("euskotrenAlerts.pb") }
 
     // MARK: Init
 
@@ -126,13 +129,34 @@ final class DataManager {
             print("[DataManager] Feed RT Euskotren descargado: \(euskotrenPbData.count) bytes")
             try euskotrenPbData.write(to: euskotrenPbURL)
 
+            // Alertas de servicio: descarga no crítica (los errores no interrumpen la carga)
+            print("[DataManager] Descargando alertas Tuvisa…")
+            do {
+                let data = try await downloadData(
+                    from: "https://opendata.euskadi.eus/transport/moveuskadi/tuvisa/gtfsrt_tuvisa_alerts.pb")
+                try data.write(to: tuvisaAlertsPbURL)
+                print("[DataManager] Alertas Tuvisa: \(data.count) bytes")
+            } catch {
+                print("[DataManager] Advertencia: alertas Tuvisa no disponibles: \(error)")
+            }
+            print("[DataManager] Descargando alertas Euskotren…")
+            do {
+                let data = try await downloadData(
+                    from: "https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfsrt_euskotren_alerts.pb")
+                try data.write(to: euskotrenAlertsPbURL)
+                print("[DataManager] Alertas Euskotren: \(data.count) bytes")
+            } catch {
+                print("[DataManager] Advertencia: alertas Euskotren no disponibles: \(error)")
+            }
+
             // Parsear en background
             if !hasData { loadState = .loading(String(localized: "Processing data…")) }
-            let (parsed, delays) = await parseInBackground()
-            print("[DataManager] Datos parseados: \(parsed.stops.count) paradas (\(parsed.stops.values.filter(\.isTram).count) tranvía), \(delays.count) trips RT")
+            let (parsed, delays, alerts) = await parseInBackground()
+            print("[DataManager] Datos parseados: \(parsed.stops.count) paradas (\(parsed.stops.values.filter(\.isTram).count) tranvía), \(delays.count) trips RT, \(alerts.stopIds.count + alerts.routeIds.count) alertas")
 
             gtfsData = parsed
             tripDelays = delays
+            serviceAlerts = alerts
             activeStopIds = computeStopsWithUpcomingArrivals(gtfsData: parsed)
             lastRefresh = Date()
             version += 1
@@ -149,6 +173,7 @@ final class DataManager {
                 if let cached = await tryLoadFromCache() {
                     gtfsData = cached.gtfs
                     tripDelays = cached.delays
+                    serviceAlerts = cached.alerts
                     activeStopIds = computeStopsWithUpcomingArrivals(gtfsData: cached.gtfs)
                     version += 1
                     loadState = .ready
@@ -193,11 +218,13 @@ final class DataManager {
         }.value
     }
 
-    private func parseInBackground() async -> (GTFSData, [String: TripDelayInfo]) {
+    private func parseInBackground() async -> (GTFSData, [String: TripDelayInfo], ServiceAlerts) {
         let folder = gtfsDir.path
         let pbPath = pbURL.path
         let tramFolder = euskotrenGtfsDir.path
         let tramPbPath = euskotrenPbURL.path
+        let tuvisaAlertsPath = tuvisaAlertsPbURL.path
+        let euskotrenAlertsPath = euskotrenAlertsPbURL.path
         return await Task.detached(priority: .userInitiated) {
             var gtfs = loadGTFS(folder: folder)
             let tramGtfs = loadEuskoTranGTFS(folder: tramFolder)
@@ -220,11 +247,24 @@ final class DataManager {
                 let tramDelays = loadTripDelays(data: tramData)
                 delays.merge(tramDelays) { _, new in new }
             }
-            return (gtfs, delays)
+
+            var alerts = ServiceAlerts()
+            if let data = FileManager.default.contents(atPath: tuvisaAlertsPath) {
+                let a = loadAlerts(data: data)
+                alerts.stopIds.formUnion(a.stopIds)
+                alerts.routeIds.formUnion(a.routeIds)
+            }
+            if let data = FileManager.default.contents(atPath: euskotrenAlertsPath) {
+                let a = loadAlerts(data: data)
+                alerts.stopIds.formUnion(a.stopIds)
+                alerts.routeIds.formUnion(a.routeIds)
+            }
+
+            return (gtfs, delays, alerts)
         }.value
     }
 
-    private func tryLoadFromCache() async -> (gtfs: GTFSData, delays: [String: TripDelayInfo])? {
+    private func tryLoadFromCache() async -> (gtfs: GTFSData, delays: [String: TripDelayInfo], alerts: ServiceAlerts)? {
         guard FileManager.default.fileExists(atPath: gtfsDir.appendingPathComponent("stops.txt").path) else {
             return nil
         }
@@ -232,6 +272,8 @@ final class DataManager {
         let pbPath = pbURL.path
         let tramFolder = euskotrenGtfsDir.path
         let tramPbPath = euskotrenPbURL.path
+        let tuvisaAlertsPath = tuvisaAlertsPbURL.path
+        let euskotrenAlertsPath = euskotrenAlertsPbURL.path
         return await Task.detached(priority: .userInitiated) {
             var gtfs = loadGTFS(folder: folder)
             let tramGtfs = loadEuskoTranGTFS(folder: tramFolder)
@@ -253,7 +295,20 @@ final class DataManager {
                 let tramDelays = loadTripDelays(data: tramData)
                 delays.merge(tramDelays) { _, new in new }
             }
-            return (gtfs, delays)
+
+            var alerts = ServiceAlerts()
+            if let data = FileManager.default.contents(atPath: tuvisaAlertsPath) {
+                let a = loadAlerts(data: data)
+                alerts.stopIds.formUnion(a.stopIds)
+                alerts.routeIds.formUnion(a.routeIds)
+            }
+            if let data = FileManager.default.contents(atPath: euskotrenAlertsPath) {
+                let a = loadAlerts(data: data)
+                alerts.stopIds.formUnion(a.stopIds)
+                alerts.routeIds.formUnion(a.routeIds)
+            }
+
+            return (gtfs, delays, alerts)
         }.value
     }
 }
