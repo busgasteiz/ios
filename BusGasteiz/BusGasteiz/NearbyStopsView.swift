@@ -7,8 +7,7 @@ struct NearbyStopsView: View {
 
     @Environment(DataManager.self) private var dataManager
     @Environment(LocationManager.self) private var locationManager
-
-    @AppStorage("searchRadius") private var searchRadius: Double = 200
+    @Environment(AppSettings.self) private var appSettings
 
     @State private var nearbyStops: [NearbyStop] = []
     @State private var recomputeTask: Task<Void, Never>?
@@ -41,7 +40,7 @@ struct NearbyStopsView: View {
         }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
-        .onChange(of: searchRadius) { recompute() }
+        .onChange(of: appSettings.searchRadius) { recompute() }
         .onAppear {
             recompute()
             if dataManager.gtfsData == nil {
@@ -67,7 +66,7 @@ struct NearbyStopsView: View {
                 ContentUnavailableView(
                     "No Nearby Stops",
                     systemImage: "bus.doubledecker",
-                    description: Text("There are no stops within \(Int(searchRadius)) m.\nIncrease the search radius.")
+                    description: Text("There are no stops within \(Int(appSettings.searchRadius)) m.\nIncrease the search radius.")
                 )
             } else {
                 List {
@@ -171,9 +170,9 @@ struct NearbyStopsView: View {
             Menu {
                 ForEach([100.0, 200.0, 300.0, 500.0, 1000.0], id: \.self) { r in
                     Button {
-                        searchRadius = r
+                        appSettings.searchRadius = r
                     } label: {
-                        if r == searchRadius {
+                        if r == appSettings.searchRadius {
                             Label("\(Int(r)) m", systemImage: "checkmark")
                         } else {
                             Text("\(Int(r)) m")
@@ -181,7 +180,7 @@ struct NearbyStopsView: View {
                     }
                 }
             } label: {
-                Text("\(Int(searchRadius)) m")
+                Text("\(Int(appSettings.searchRadius)) m")
             }
         }
     }
@@ -223,7 +222,7 @@ struct NearbyStopsView: View {
             lat = 42.846718
             lon = -2.671622
         }
-        let radius = searchRadius
+        let radius = appSettings.searchRadius
         let activeIds = dataManager.activeStopIds
         recomputeTask?.cancel()
         recomputeTask = Task.detached(priority: .userInitiated) {

@@ -7,8 +7,7 @@ struct BusMapView: View {
 
     @Environment(DataManager.self) private var dataManager
     @Environment(LocationManager.self) private var locationManager
-
-    @AppStorage("searchRadius") private var searchRadius: Double = 200
+    @Environment(AppSettings.self) private var appSettings
 
     @State private var position: MapCameraPosition = .automatic
     @State private var mapInteractionModes: MapInteractionModes = .all
@@ -86,7 +85,7 @@ struct BusMapView: View {
         }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
-        .onChange(of: searchRadius) { centerOnUser() }
+        .onChange(of: appSettings.searchRadius) { centerOnUser() }
         .onMapCameraChange(frequency: .continuous) { context in
             visibleRegion = context.region
             guard isReady else { return }
@@ -147,10 +146,10 @@ struct BusMapView: View {
             Menu {
                 ForEach([100.0, 200.0, 300.0, 500.0, 1000.0], id: \.self) { r in
                     Button {
-                        searchRadius = r
+                        appSettings.searchRadius = r
                         recompute()
                     } label: {
-                        if r == searchRadius {
+                        if r == appSettings.searchRadius {
                             Label("\(Int(r)) m", systemImage: "checkmark")
                         } else {
                             Text("\(Int(r)) m")
@@ -158,7 +157,7 @@ struct BusMapView: View {
                     }
                 }
             } label: {
-                Text("\(Int(searchRadius)) m")
+                Text("\(Int(appSettings.searchRadius)) m")
             }
         }
     }
@@ -197,8 +196,8 @@ struct BusMapView: View {
         }
         let region = MKCoordinateRegion(
             center: coord,
-            latitudinalMeters: searchRadius * 4,
-            longitudinalMeters: searchRadius * 4
+            latitudinalMeters: appSettings.searchRadius * 4,
+            longitudinalMeters: appSettings.searchRadius * 4
         )
         // En iOS 26 el binding MapCameraPosition no interrumpe un gesto activo:
         // la actualización se aplaza hasta que el gesto termina.

@@ -116,4 +116,5 @@ struct ContentView: View {
         .environment(DataManager.shared)
         .environment(LocationManager())
         .environment(FavoritesManager())
+        .environment(AppSettings())
 }
