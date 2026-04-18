@@ -294,9 +294,15 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
         for ln in lines {
             let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
             let r = splitCSV(t); let id = localGet(r, iId)
-            guard !id.isEmpty, localGet(r, iAg) == vitoriaTramAgency else { continue }
+            let shortName = localGet(r, iSn)
+            // Incluir solo rutas del tranvía de Gasteiz con nombre visible (TG1, TG2…).
+            // La línea "41" (Ibaiondo-Unibertsitatea) es un servicio combinado interno
+            // que no tiene identidad visual para el usuario.
+            guard !id.isEmpty,
+                  localGet(r, iAg) == vitoriaTramAgency,
+                  shortName.hasPrefix("TG") else { continue }
             tramRouteIds.insert(id)
-            g.routes[id] = RouteInfo(id: id, shortName: localGet(r, iSn),
+            g.routes[id] = RouteInfo(id: id, shortName: shortName,
                                      longName: localGet(r, iLn), color: localGet(r, iCo))
         }
     }
