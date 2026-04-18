@@ -3,7 +3,7 @@
 //  BusGasteiz
 //
 //  Define las variantes de línea (sufijos A/B/C...) basándose en el headsign del viaje.
-//  Para añadir variantes a una nueva línea, añadir entradas a `routeVariantRules`.
+//  Para añadir variantes a una nueva línea, añadir entradas a `RouteVariantConfig.rules`.
 //  Las reglas se evalúan en orden; la primera que coincide gana.
 //
 
@@ -20,19 +20,21 @@ struct RouteVariantRule: Sendable {
 
 /// Reglas de variante para todas las líneas con extensiones diferenciadas.
 /// Se comprueban en orden; la primera coincidencia determina el sufijo.
-nonisolated(unsafe) let routeVariantRules: [RouteVariantRule] = [
-    // Línea 5: 5A = Astegieta, 5B = Jundiz/Ariñez, 5C = ITV Ariñez
-    // "ARIÑEZ ITV" debe ir antes de "ARIÑEZ" para no quedar enmascarado.
-    RouteVariantRule(routeId: "5", suffix: "A", headsignContains: "ASTEGIETA"),
-    RouteVariantRule(routeId: "5", suffix: "C", headsignContains: "ARIÑEZ ITV"),
-    RouteVariantRule(routeId: "5", suffix: "B", headsignContains: "ARIÑEZ"),
-    RouteVariantRule(routeId: "5", suffix: "B", headsignContains: "JUNDIZ"),
-]
+enum RouteVariantConfig {
+    static let rules: [RouteVariantRule] = [
+        // Línea 5: 5A = Astegieta, 5B = Jundiz/Ariñez, 5C = ITV Ariñez
+        // "ARIÑEZ ITV" debe ir antes de "ARIÑEZ" para no quedar enmascarado.
+        RouteVariantRule(routeId: "5", suffix: "A", headsignContains: "ASTEGIETA"),
+        RouteVariantRule(routeId: "5", suffix: "C", headsignContains: "ARIÑEZ ITV"),
+        RouteVariantRule(routeId: "5", suffix: "B", headsignContains: "ARIÑEZ"),
+        RouteVariantRule(routeId: "5", suffix: "B", headsignContains: "JUNDIZ"),
+    ]
+}
 
 /// Devuelve el sufijo de variante (p.ej. "A") para un viaje dado, o `nil` si no aplica ninguna regla.
 nonisolated func variantSuffix(routeId: String, headsign: String) -> String? {
     let upper = headsign.uppercased()
-    for rule in routeVariantRules where rule.routeId == routeId {
+    for rule in RouteVariantConfig.rules where rule.routeId == routeId {
         if upper.contains(rule.headsignContains) {
             return rule.suffix
         }
