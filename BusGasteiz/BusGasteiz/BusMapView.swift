@@ -53,9 +53,9 @@ struct BusMapView: View {
         .sheet(isPresented: $showStopSheet) {
             if let nearby = selectedStop {
                 NavigationStack {
-                    StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: true)
+                    StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: false)
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
+                            ToolbarItem(placement: .topBarLeading) {
                                 SheetCloseButton { showStopSheet = false }
                             }
                         }
