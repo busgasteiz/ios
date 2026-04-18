@@ -82,7 +82,8 @@ struct NearbyStopsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
+                            .padding(.top, 44)
+                            .padding(.bottom, 28)
                             .listRowSeparator(.hidden)
                     }
 
@@ -100,7 +101,7 @@ struct NearbyStopsView: View {
                         .padding(.vertical, 16)
                     }
                     .buttonStyle(.borderless)
-                    .listRowSeparator(.hidden, edges: .bottom)
+                    .listRowSeparator(.hidden)
                 }
                 .listStyle(.plain)
                 .refreshable {
