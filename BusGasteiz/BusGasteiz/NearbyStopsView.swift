@@ -11,6 +11,7 @@ struct NearbyStopsView: View {
     @AppStorage("searchRadius") private var searchRadius: Double = 200
 
     @State private var nearbyStops: [NearbyStop] = []
+    @State private var recomputeTask: Task<Void, Never>?
     @State private var isReloading = false
     @State private var isLocating = false
     @State private var showingAbout = false
@@ -40,6 +41,7 @@ struct NearbyStopsView: View {
         }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { recompute() }
+        .onChange(of: searchRadius) { recompute() }
         .onAppear {
             recompute()
             if dataManager.gtfsData == nil {
@@ -170,7 +172,6 @@ struct NearbyStopsView: View {
                 ForEach([100.0, 200.0, 300.0, 500.0, 1000.0], id: \.self) { r in
                     Button {
                         searchRadius = r
-                        recompute()
                     } label: {
                         if r == searchRadius {
                             Label("\(Int(r)) m", systemImage: "checkmark")
@@ -224,8 +225,10 @@ struct NearbyStopsView: View {
         }
         let radius = searchRadius
         let activeIds = dataManager.activeStopIds
-        Task.detached(priority: .userInitiated) {
+        recomputeTask?.cancel()
+        recomputeTask = Task.detached(priority: .userInitiated) {
             let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs, activeStopIds: activeIds)
+            guard !Task.isCancelled else { return }
             await MainActor.run { nearbyStops = stops }
         }
     }
