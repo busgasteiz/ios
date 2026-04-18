@@ -284,13 +284,7 @@ struct RouteArrivalsView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 8) {
-                    Text(routeShortName)
-                        .font(.headline)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color(hex: routeColor))
-                        .foregroundStyle(contrastColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor, outerSize: 34)
                     Text(stop.localizedName)
                         .font(.headline)
                 }
@@ -337,16 +331,5 @@ struct RouteArrivalsView: View {
                 nextArrival = next
             }
         }
-    }
-
-    private var contrastColor: Color {
-        let c = routeColor.lowercased()
-        if c.isEmpty || c == "ffffff" { return .black }
-        guard c.count == 6,
-              let r = UInt8(c.prefix(2), radix: 16),
-              let g = UInt8(c.dropFirst(2).prefix(2), radix: 16),
-              let b = UInt8(c.dropFirst(4), radix: 16) else { return .white }
-        let lum = 0.299 * Double(r) + 0.587 * Double(g) + 0.114 * Double(b)
-        return lum > 140 ? .black : .white
     }
 }
