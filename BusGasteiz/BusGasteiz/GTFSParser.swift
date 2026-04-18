@@ -667,11 +667,13 @@ nonisolated func computeArrivals(
         guard predTime >= windowStart && predTime <= windowEnd else { continue }
 
         let route = gtfsData.routes[trip.routeId]
+        let routeDisplayName = (route?.shortName ?? trip.routeId)
+            + (variantSuffix(routeId: trip.routeId, headsign: trip.headsign) ?? "")
         arrivals.append(UpcomingArrival(
             stopId: stopId,
             stopName: stop.name,
             distanceMeters: distance,
-            routeShortName: route?.shortName ?? trip.routeId,
+            routeShortName: routeDisplayName,
             routeLongName:  route?.longName  ?? "",
             routeColor:     route?.color     ?? "",
             headsign:       trip.headsign,
@@ -725,7 +727,8 @@ nonisolated func computeNextArrivals(
         guard let trip = gtfsData.trips[entry.tripId] else { continue }
         let svc = trip.serviceId
         let route = gtfsData.routes[trip.routeId]
-        let routeShortName = route?.shortName ?? trip.routeId
+        let routeShortName = (route?.shortName ?? trip.routeId)
+            + (variantSuffix(routeId: trip.routeId, headsign: trip.headsign) ?? "")
 
         for day in days {
             let active = day.svcIds.contains(svc) || svc == "UNDEFINED"
