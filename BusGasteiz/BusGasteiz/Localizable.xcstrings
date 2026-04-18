@@ -69,23 +69,6 @@
         }
       }
     },
-    "© 2026 Ion Jaureguialzo Sarasola. Todos los derechos reservados.": {
-      "comment": "Copyright notice",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 Ion Jaureguialzo Sarasola. Todos los derechos reservados."
-          }
-        },
-        "eu": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "© 2026 Ion Jaureguialzo Sarasola. Eskubide guztiak erreserbatuta."
-          }
-        }
-      }
-    },
     "1 min": {
       "comment": "Exactly one minute on arrival countdown",
       "localizations": {
@@ -426,6 +409,23 @@
         }
       }
     },
+    "GitHub Repository": {
+      "comment": "Link label in the Support and Source Code section of the About screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repositorio de GitHub"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub biltegi"
+          }
+        }
+      }
+    },
     "Line %@": {
       "comment": "Navigation title for a single route detail view; %@ is the route short name",
       "localizations": {
@@ -579,23 +579,6 @@
         }
       }
     },
-    "No more arrivals of line %@ in the next 60 minutes.": {
-      "comment": "Empty-state description in the route arrivals view; %@ is the route short name",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay más llegadas de la línea %@ en los próximos 60 minutos."
-          }
-        },
-        "eu": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ez dago %@ linearen iristerapenik hurrengo 60 minutuetan."
-          }
-        }
-      }
-    },
     "No Nearby Stops": {
       "comment": "Empty-state title when no stops are within the search radius",
       "localizations": {
@@ -609,6 +592,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inguruko geltokirik ez"
+          }
+        }
+      }
+    },
+    "No more arrivals of line %@ in the next 60 minutes.": {
+      "comment": "Empty-state description in the route arrivals view; %@ is the route short name",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay más llegadas de la línea %@ en los próximos 60 minutos."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ez dago %@ linearen iristerapenik hurrengo 60 minutuetan."
           }
         }
       }
@@ -783,6 +783,23 @@
         }
       }
     },
+    "Support and Source Code": {
+      "comment": "Section header in the About screen",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soporte y código fuente"
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laguntza eta iturburu-kodea"
+          }
+        }
+      }
+    },
     "Tap the star on a stop or line to save it here.": {
       "comment": "Empty-state description on the favourites screen",
       "localizations": {
@@ -847,6 +864,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tranbia"
+          }
+        }
+      }
+    },
+    "© 2026 Ion Jaureguialzo Sarasola. Todos los derechos reservados.": {
+      "comment": "Copyright notice",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 Ion Jaureguialzo Sarasola. Todos los derechos reservados."
+          }
+        },
+        "eu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 Ion Jaureguialzo Sarasola. Eskubide guztiak erreserbatuta."
           }
         }
       }

@@ -56,6 +56,13 @@ struct AboutView: View {
                     )
                 }
 
+                // ── Soporte y código fuente ────────────────────────────────
+                Section("Support and Source Code") {
+                    Link(destination: URL(string: "https://github.com/busgasteiz")!) {
+                        Label("GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
+                }
+
                 // ── Paletas de colores ─────────────────────────────────────
                 Section("Color Palettes") {
                     DataSourceRow(
