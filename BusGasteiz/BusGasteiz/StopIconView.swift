@@ -52,7 +52,7 @@ struct RouteBadgeView: View {
 
     private var inner: CGFloat  { outerSize - 4 }
     private var radius: CGFloat { inner * 10 / 44 }
-    private var fontSize: CGFloat { inner * 15 / 44 }
+    private var fontSize: CGFloat { max(inner * 15 / 44, 10) }
 
     private var fillColor: Color { Color(hex: colorHex) }
 

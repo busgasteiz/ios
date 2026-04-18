@@ -251,7 +251,7 @@ struct StopRowView: View {
                         ForEach(nearby.routes, id: \.shortName) { route in
                             RouteBadgeView(routeShortName: route.shortName,
                                           colorHex: route.color,
-                                          outerSize: 26)
+                                          outerSize: 28)
                         }
                     }
                     .padding(.vertical, 2)
