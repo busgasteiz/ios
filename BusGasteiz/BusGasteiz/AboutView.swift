@@ -42,16 +42,19 @@ struct AboutView: View {
                     DataSourceRow(
                         name: "Ayuntamiento de Vitoria-Gasteiz – TUVISA bus lines",
                         license: "CC BY",
+                        systemImage: "bus.fill",
                         url: URL(string: "https://www.vitoria-gasteiz.org/wb021/was/contenidoAction.do?uid=app_j34_0021&idioma=es")!
                     )
                     DataSourceRow(
                         name: "Ayuntamiento de Vitoria-Gasteiz – TUVISA real-time data",
                         license: "CC BY",
+                        systemImage: "antenna.radiowaves.left.and.right",
                         url: URL(string: "https://www.vitoria-gasteiz.org/wb021/was/contenidoAction.do?uid=app_j34_0022&idioma=es")!
                     )
                     DataSourceRow(
                         name: "Open Data Euskadi – Moveuskadi",
                         license: "CC BY",
+                        systemImage: "tram.fill",
                         url: URL(string: "https://opendata.euskadi.eus/catalogo/-/moveuskadi-datos-de-la-red-de-transporte-publico-de-euskadi-operadores-horarios-paradas-calendario-tarifas-etc/")!
                     )
                 }
@@ -68,6 +71,7 @@ struct AboutView: View {
                     DataSourceRow(
                         name: "Autumn Rainbow – COLOURlovers",
                         license: "CC BY-NC-SA",
+                        systemImage: "paintpalette",
                         url: URL(string: "http://www.colourlovers.com/palette/3240116/%E2%80%A2Autumn_Rainbow%E2%80%A2")!
                     )
                 }
@@ -88,16 +92,21 @@ struct AboutView: View {
 private struct DataSourceRow: View {
     let name: String
     let license: String
+    let systemImage: String
     let url: URL
 
     var body: some View {
         Link(destination: url) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .foregroundStyle(.primary)
-                Text(license)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .foregroundStyle(.primary)
+                    Text(license)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: systemImage)
             }
         }
     }
