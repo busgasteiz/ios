@@ -82,8 +82,8 @@ struct NearbyStopsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 44)
-                            .padding(.bottom, 28)
+                            .padding(.top, 22)
+                            .padding(.bottom, 6)
                             .listRowSeparator(.hidden)
                     }
 
