@@ -20,7 +20,7 @@ struct RouteVariantRule: Sendable {
 
 /// Reglas de variante para todas las líneas con extensiones diferenciadas.
 /// Se comprueban en orden; la primera coincidencia determina el sufijo.
-let routeVariantRules: [RouteVariantRule] = [
+nonisolated(unsafe) let routeVariantRules: [RouteVariantRule] = [
     // Línea 5: 5A = Astegieta, 5B = Jundiz/Ariñez, 5C = ITV Ariñez
     // "ARIÑEZ ITV" debe ir antes de "ARIÑEZ" para no quedar enmascarado.
     RouteVariantRule(routeId: "5", suffix: "A", headsignContains: "ASTEGIETA"),
