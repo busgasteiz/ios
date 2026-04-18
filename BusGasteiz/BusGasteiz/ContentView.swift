@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import MapKit
 
 // MARK: - Pre-calentamiento de MapKit
@@ -112,9 +113,14 @@ struct ContentView: View {
 }
 
 #Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: FavoriteStop.self, FavoriteRoute.self,
+        configurations: config
+    )
     ContentView()
         .environment(DataManager.shared)
         .environment(LocationManager())
-        .environment(FavoritesManager())
+        .environment(FavoritesManager(modelContext: container.mainContext))
         .environment(AppSettings())
 }
