@@ -109,6 +109,16 @@
         }
       }
     },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%lld m" : {
       "comment" : "Distance in metres",
       "localizations" : {
@@ -1043,6 +1053,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tranbia"
+          }
+        }
+      }
+    },
+    "Updated:" : {
+      "comment" : "Prefix label for the last update timestamp shown at the bottom of the nearby stops list",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualización:"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eguneratua:"
           }
         }
       }

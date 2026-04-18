@@ -77,6 +77,15 @@ struct NearbyStopsView: View {
                         }
                     }
 
+                    if let lastRefresh = dataManager.lastRefresh {
+                        Text("\(String(localized: "Updated:")) \(lastRefresh.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .listRowSeparator(.hidden)
+                    }
+
                     Button {
                         showingAbout = true
                     } label: {
