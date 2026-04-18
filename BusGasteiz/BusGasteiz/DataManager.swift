@@ -253,11 +253,15 @@ final class DataManager {
                 let a = loadAlerts(data: data)
                 alerts.stopIds.formUnion(a.stopIds)
                 alerts.routeIds.formUnion(a.routeIds)
+                for (k, v) in a.stopAlerts  { alerts.stopAlerts[k,  default: []] += v }
+                for (k, v) in a.routeAlerts { alerts.routeAlerts[k, default: []] += v }
             }
             if let data = FileManager.default.contents(atPath: euskotrenAlertsPath) {
                 let a = loadAlerts(data: data)
                 alerts.stopIds.formUnion(a.stopIds)
                 alerts.routeIds.formUnion(a.routeIds)
+                for (k, v) in a.stopAlerts  { alerts.stopAlerts[k,  default: []] += v }
+                for (k, v) in a.routeAlerts { alerts.routeAlerts[k, default: []] += v }
             }
 
             return (gtfs, delays, alerts)
@@ -301,11 +305,15 @@ final class DataManager {
                 let a = loadAlerts(data: data)
                 alerts.stopIds.formUnion(a.stopIds)
                 alerts.routeIds.formUnion(a.routeIds)
+                for (k, v) in a.stopAlerts  { alerts.stopAlerts[k,  default: []] += v }
+                for (k, v) in a.routeAlerts { alerts.routeAlerts[k, default: []] += v }
             }
             if let data = FileManager.default.contents(atPath: euskotrenAlertsPath) {
                 let a = loadAlerts(data: data)
                 alerts.stopIds.formUnion(a.stopIds)
                 alerts.routeIds.formUnion(a.routeIds)
+                for (k, v) in a.stopAlerts  { alerts.stopAlerts[k,  default: []] += v }
+                for (k, v) in a.routeAlerts { alerts.routeAlerts[k, default: []] += v }
             }
 
             return (gtfs, delays, alerts)

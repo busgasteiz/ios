@@ -72,10 +72,18 @@ struct TripDelayInfo: Sendable {
 
 // MARK: - Alertas de servicio (GTFS-RT Alerts)
 
+struct ServiceAlert: Identifiable, Sendable {
+    let id = UUID()
+    let headerText: String
+    let descriptionText: String
+}
+
 struct ServiceAlerts: Sendable {
-    var stopIds: Set<String> = []
+    var stopAlerts: [String: [ServiceAlert]] = [:]    // stop_id  → alertas
+    var routeAlerts: [String: [ServiceAlert]] = [:]   // route_id → alertas
+    var stopIds:  Set<String> = []
     var routeIds: Set<String> = []
-    var isEmpty: Bool { stopIds.isEmpty && routeIds.isEmpty }
+    var isEmpty: Bool { stopAlerts.isEmpty && routeAlerts.isEmpty }
     nonisolated init() {}
 }
 

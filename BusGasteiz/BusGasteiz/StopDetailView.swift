@@ -15,16 +15,30 @@ struct StopDetailView: View {
     @State private var nextArrivals: [UpcomingArrival] = []
     @State private var lastUpdate: Date?
 
+    private var stopAlerts: [ServiceAlert] {
+        dataManager.serviceAlerts.stopAlerts[stop.id] ?? []
+    }
+
     var body: some View {
         Group {
             if arrivals.isEmpty {
                 ScrollView {
+                    if !stopAlerts.isEmpty {
+                        VStack(spacing: 8) {
+                            ForEach(stopAlerts) { alert in
+                                AlertRowView(alert: alert)
+                                    .padding(.horizontal)
+                            }
+                        }
+                        .padding(.top, 16)
+                    }
+
                     ContentUnavailableView(
                         "No Arrivals",
                         systemImage: "clock",
                         description: Text("No scheduled arrivals in the next 60 minutes.")
                     )
-                    .padding(.top, 60)
+                    .padding(.top, stopAlerts.isEmpty ? 60 : 16)
 
                     if !nextArrivals.isEmpty {
                         VStack(alignment: .leading, spacing: 0) {
@@ -50,24 +64,30 @@ struct StopDetailView: View {
                 }
                 .refreshable { await refreshAndRecompute() }
             } else {
-                List(arrivals) { arrival in
-                    NavigationLink(value: AppNavDestination.routeArrivals(
-                        stop: stop, distance: distance,
-                        routeShortName: arrival.routeShortName,
-                        routeColor: arrival.routeColor)) {
-                        ArrivalRowView(arrival: arrival)
+                List {
+                    ForEach(stopAlerts) { alert in
+                        AlertRowView(alert: alert)
+                            .listRowBackground(Color.red.opacity(0.07))
                     }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        let isFav = favorites.isRouteFavorite(stopId: stop.id,
-                                                              routeShortName: arrival.routeShortName)
-                        Button {
-                            favorites.toggleRoute(stopId: stop.id,
-                                                  routeShortName: arrival.routeShortName)
-                        } label: {
-                            Label(isFav ? String(localized: "Remove") : String(localized: "Favorite"),
-                                  systemImage: isFav ? "star.slash.fill" : "star.fill")
+                    ForEach(arrivals) { arrival in
+                        NavigationLink(value: AppNavDestination.routeArrivals(
+                            stop: stop, distance: distance,
+                            routeShortName: arrival.routeShortName,
+                            routeColor: arrival.routeColor)) {
+                            ArrivalRowView(arrival: arrival)
                         }
-                        .tint(isFav ? .gray : .yellow)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            let isFav = favorites.isRouteFavorite(stopId: stop.id,
+                                                                  routeShortName: arrival.routeShortName)
+                            Button {
+                                favorites.toggleRoute(stopId: stop.id,
+                                                      routeShortName: arrival.routeShortName)
+                            } label: {
+                                Label(isFav ? String(localized: "Remove") : String(localized: "Favorite"),
+                                      systemImage: isFav ? "star.slash.fill" : "star.fill")
+                            }
+                            .tint(isFav ? .gray : .yellow)
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -218,6 +238,35 @@ struct ArrivalRowView: View {
     }
 }
 
+// MARK: - Fila de alerta de servicio
+
+struct AlertRowView: View {
+    let alert: ServiceAlert
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+                .font(.title3)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 3) {
+                if !alert.headerText.isEmpty {
+                    Text(alert.headerText)
+                        .font(.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if !alert.descriptionText.isEmpty && alert.descriptionText != alert.headerText {
+                    Text(alert.descriptionText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 // MARK: - Extensión Color desde hex
 
 extension Color {
@@ -248,16 +297,37 @@ struct RouteArrivalsView: View {
     @State private var arrivals: [UpcomingArrival] = []
     @State private var nextArrival: UpcomingArrival?
 
+    private var routeAlerts: [ServiceAlert] {
+        guard let gtfs = dataManager.gtfsData else { return [] }
+        // Buscar route_id: coincidencia directa o por nombre base (variantes como "5A" -> "5")
+        let route = gtfs.routes.values.first(where: { $0.shortName == routeShortName })
+            ?? gtfs.routes.values.first(where: {
+                $0.shortName == String(routeShortName.prefix(while: { $0.isNumber }))
+            })
+        guard let routeId = route?.id else { return [] }
+        return dataManager.serviceAlerts.routeAlerts[routeId] ?? []
+    }
+
     var body: some View {
         Group {
             if arrivals.isEmpty {
                 ScrollView {
+                    if !routeAlerts.isEmpty {
+                        VStack(spacing: 8) {
+                            ForEach(routeAlerts) { alert in
+                                AlertRowView(alert: alert)
+                                    .padding(.horizontal)
+                            }
+                        }
+                        .padding(.top, 16)
+                    }
+
                     ContentUnavailableView(
                         "No Arrivals",
                         systemImage: "clock",
                         description: Text("No more arrivals of line \(routeShortName) in the next 60 minutes.")
                     )
-                    .padding(.top, 60)
+                    .padding(.top, routeAlerts.isEmpty ? 60 : 16)
 
                     if let next = nextArrival {
                         VStack(alignment: .leading, spacing: 0) {
@@ -274,8 +344,14 @@ struct RouteArrivalsView: View {
                 }
                 .refreshable { await refreshAndRecompute() }
             } else {
-                List(arrivals) { arrival in
-                    ArrivalRowView(arrival: arrival)
+                List {
+                    ForEach(routeAlerts) { alert in
+                        AlertRowView(alert: alert)
+                            .listRowBackground(Color.red.opacity(0.07))
+                    }
+                    ForEach(arrivals) { arrival in
+                        ArrivalRowView(arrival: arrival)
+                    }
                 }
                 .listStyle(.plain)
                 .refreshable { await refreshAndRecompute() }
@@ -318,14 +394,15 @@ struct RouteArrivalsView: View {
         let sid = stop.id
         let dist = distance
         let delays = dataManager.tripDelays
+        let alerts = dataManager.serviceAlerts
         let route = routeShortName
         Task.detached(priority: .userInitiated) {
             let all = computeArrivals(stopId: sid, distance: dist,
-                                      gtfsData: gtfs, delays: delays)
+                                      gtfsData: gtfs, delays: delays, alerts: alerts)
             let filtered = all.filter { $0.routeShortName == route }
             let next = filtered.isEmpty
                 ? computeNextArrivals(stopId: sid, distance: dist,
-                                      gtfsData: gtfs, delays: delays)
+                                      gtfsData: gtfs, delays: delays, alerts: alerts)
                     .first { $0.routeShortName == route }
                 : nil
             await MainActor.run {

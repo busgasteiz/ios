@@ -519,35 +519,93 @@ private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout Servi
     }
     guard !deleted, let aData = alertData else { return }
 
+    // Recoger selectores de entidad y textos en una sola pasada
+    var stopIds:     [String] = []
+    var routeIds:    [String] = []
+    var headerParts: [(lang: String, text: String)] = []
+    var descParts:   [(lang: String, text: String)] = []
+
     var ar = ProtoReader(data: aData)
     while ar.hasMore {
         guard let t = ar.readTag() else { break }
         switch t.field {
         case 1: _ = ar.readLengthDelimited()  // active_period, ignorar
-        case 2: if let d = ar.readLengthDelimited() { parseAlertEntitySelector(d, into: &alerts) }
+        case 2:  // informed_entity (EntitySelector)
+            if let d = ar.readLengthDelimited() {
+                var es = ProtoReader(data: d)
+                while es.hasMore {
+                    guard let tt = es.readTag() else { break }
+                    switch tt.field {
+                    case 2: // route_id
+                        if let dd = es.readLengthDelimited(),
+                           let s = String(data: dd, encoding: .utf8), !s.isEmpty {
+                            routeIds.append(s)
+                        }
+                    case 5: // stop_id
+                        if let dd = es.readLengthDelimited(),
+                           let s = String(data: dd, encoding: .utf8), !s.isEmpty {
+                            stopIds.append(s)
+                        }
+                    default: es.skip(wire: tt.wire)
+                    }
+                }
+            }
+        case 6: // header_text (TranslatedString)
+            if let d = ar.readLengthDelimited() { headerParts = parseTranslatedString(d) }
+        case 7: // description_text (TranslatedString)
+            if let d = ar.readLengthDelimited() { descParts = parseTranslatedString(d) }
         default: ar.skip(wire: t.wire)
         }
     }
+
+    let header = bestTranslation(from: headerParts)
+    let desc   = bestTranslation(from: descParts)
+    guard !header.isEmpty || !desc.isEmpty else { return }
+
+    let alert = ServiceAlert(headerText: header, descriptionText: desc)
+    for sid in stopIds  {
+        alerts.stopAlerts[sid,  default: []].append(alert)
+        alerts.stopIds.insert(sid)
+    }
+    for rid in routeIds {
+        alerts.routeAlerts[rid, default: []].append(alert)
+        alerts.routeIds.insert(rid)
+    }
 }
 
-private nonisolated func parseAlertEntitySelector(_ data: Data, into alerts: inout ServiceAlerts) {
+private nonisolated func parseTranslatedString(_ data: Data) -> [(lang: String, text: String)] {
     var r = ProtoReader(data: data)
+    var result: [(lang: String, text: String)] = []
     while r.hasMore {
         guard let t = r.readTag() else { break }
         switch t.field {
-        case 2:  // route_id
-            if let d = r.readLengthDelimited(),
-               let s = String(data: d, encoding: .utf8), !s.isEmpty {
-                alerts.routeIds.insert(s)
-            }
-        case 5:  // stop_id
-            if let d = r.readLengthDelimited(),
-               let s = String(data: d, encoding: .utf8), !s.isEmpty {
-                alerts.stopIds.insert(s)
+        case 1:  // Translation
+            if let d = r.readLengthDelimited() {
+                var tr = ProtoReader(data: d)
+                var text = ""
+                var lang = ""
+                while tr.hasMore {
+                    guard let tt = tr.readTag() else { break }
+                    switch tt.field {
+                    case 1: if let d2 = tr.readLengthDelimited() { text = String(data: d2, encoding: .utf8) ?? "" }
+                    case 2: if let d2 = tr.readLengthDelimited() { lang = String(data: d2, encoding: .utf8) ?? "" }
+                    default: tr.skip(wire: tt.wire)
+                    }
+                }
+                if !text.isEmpty { result.append((lang: lang, text: text)) }
             }
         default: r.skip(wire: t.wire)
         }
     }
+    return result
+}
+
+private nonisolated func bestTranslation(from parts: [(lang: String, text: String)]) -> String {
+    guard !parts.isEmpty else { return "" }
+    let deviceLang = Locale.current.language.languageCode?.identifier ?? ""
+    if let match = parts.first(where: { $0.lang == deviceLang }) { return match.text }
+    if let es    = parts.first(where: { $0.lang == "es" })        { return es.text }
+    return parts[0].text
 }
 
 // MARK: - Motor de consulta
