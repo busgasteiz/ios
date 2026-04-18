@@ -550,22 +550,30 @@ nonisolated func computeStopsWithUpcomingArrivals(gtfsData: GTFSData, windowMinu
     return result
 }
 
-/// Líneas únicas que pasan por una parada, ordenadas numéricamente/alfabéticamente.
+/// Líneas únicas que pasan por una parada, incluyendo variantes (5A/5B/5C...),
+/// ordenadas numéricamente/alfabéticamente.
 nonisolated func routesForStop(stopId: String, gtfsData: GTFSData) -> [RouteTag] {
     guard let entries = gtfsData.stopArrivals[stopId] else { return [] }
     var seen = Set<String>()
     var tags: [RouteTag] = []
     for entry in entries {
         guard let trip = gtfsData.trips[entry.tripId],
-              let route = gtfsData.routes[trip.routeId],
-              seen.insert(route.shortName).inserted else { continue }
-        tags.append(RouteTag(shortName: route.shortName, color: route.color))
+              let route = gtfsData.routes[trip.routeId] else { continue }
+        let suffix = variantSuffix(routeId: trip.routeId, headsign: trip.headsign)
+        let displayName = route.shortName + (suffix ?? "")
+        guard seen.insert(displayName).inserted else { continue }
+        tags.append(RouteTag(shortName: displayName, color: route.color))
     }
     tags.sort {
-        let a = Int($0.shortName), b = Int($1.shortName)
-        if let a, let b { return a < b }
-        if a != nil { return true }
-        if b != nil { return false }
+        // Ordena por prefijo numérico y luego por sufijo alfabético (5 < 5A < 5B < 6).
+        let aNum = Int($0.shortName.prefix(while: { $0.isNumber }))
+        let bNum = Int($1.shortName.prefix(while: { $0.isNumber }))
+        if let a = aNum, let b = bNum {
+            if a != b { return a < b }
+            return $0.shortName < $1.shortName
+        }
+        if aNum != nil { return true }
+        if bNum != nil { return false }
         return $0.shortName < $1.shortName
     }
     return tags
