@@ -302,6 +302,7 @@ struct RouteArrivalsView: View {
 
     @State private var arrivals: [UpcomingArrival] = []
     @State private var nextArrival: UpcomingArrival?
+    @State private var badgeSnapshot: UIImage? = nil
 
     private var routeAlerts: [ServiceAlert] {
         guard let gtfs = dataManager.gtfsData else { return [] }
@@ -369,7 +370,13 @@ struct RouteArrivalsView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 8) {
-                    RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor, outerSize: 34)
+                    if let img = badgeSnapshot {
+                        Image(uiImage: img)
+                            .resizable()
+                            .frame(width: 34, height: 34)
+                    } else {
+                        RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor, outerSize: 34)
+                    }
                     Text(stop.localizedName)
                         .font(.headline)
                 }
@@ -385,8 +392,20 @@ struct RouteArrivalsView: View {
                 }
             }
         }
-        .onAppear { recompute() }
+        .onAppear {
+            renderBadgeSnapshot()
+            recompute()
+        }
         .onChange(of: dataManager.version) { recompute() }
+    }
+
+    @MainActor
+    private func renderBadgeSnapshot() {
+        guard badgeSnapshot == nil else { return }
+        let badge = RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor, outerSize: 34)
+        let renderer = ImageRenderer(content: badge)
+        renderer.scale = 3
+        badgeSnapshot = renderer.uiImage
     }
 
     private func refreshAndRecompute() async {
