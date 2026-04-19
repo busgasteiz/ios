@@ -11,21 +11,27 @@ ios/
 ├── BusGasteiz.xcodeproj/
 └── BusGasteiz/
     └── BusGasteiz/               ← Código fuente principal
-        ├── BusGasteizApp.swift   # Entry point; inyecta los @Observable en el entorno
-        ├── ContentView.swift     # TabView raíz (3 pestañas)
-        ├── Models.swift          # Structs de datos (StopInfo, TripInfo, GTFSData, …)
-        ├── DataManager.swift     # Singleton @Observable; descarga, caché y refresco de datos
-        ├── GTFSParser.swift      # Parsers GTFS/GTFS-RT y motor de consulta de llegadas
-        ├── ProtoReader.swift     # Decodificador protobuf de bajo nivel (sin dependencias)
-        ├── ZIPExtractor.swift    # Descompresión de ZIPs en memoria
-        ├── LocationManager.swift # CLLocationManager envuelto en @Observable
-        ├── FavoritesManager.swift# @Observable; paradas y líneas favoritas (UserDefaults)
-        ├── NearbyStopsView.swift # Pestaña "Stops" — lista de paradas cercanas
-        ├── BusMapView.swift      # Pestaña "Map" — mapa MapKit con anotaciones de paradas
-        ├── StopDetailView.swift  # Sheet de detalle de parada; llegadas en tiempo real
-        ├── FavoritesView.swift   # Pestaña "Favorites" — lista de favoritos
-        ├── StopIconView.swift    # Componentes visuales reutilizables (StopIconView, RouteBadgeView)
-        ├── Localizable.xcstrings # Cadenas localizadas (en / es / eu)
+        ├── BusGasteizApp.swift        # Entry point; inyecta los @Observable en el entorno
+        ├── ContentView.swift          # TabView raíz (3 pestañas) + pre-calentamiento de MapKit
+        ├── Models.swift               # Structs de datos (StopInfo, TripInfo, GTFSData, …)
+        ├── DataManager.swift          # Singleton @Observable; descarga, caché y refresco de datos
+        ├── GTFSParser.swift           # Parsers GTFS/GTFS-RT y motor de consulta de llegadas
+        ├── ProtoReader.swift          # Decodificador protobuf de bajo nivel (sin dependencias)
+        ├── ZIPExtractor.swift         # Descompresión de ZIPs en memoria
+        ├── LocationManager.swift      # CLLocationManager envuelto en @Observable
+        ├── FavoritesManager.swift     # @Observable; paradas y líneas favoritas (UserDefaults)
+        ├── AppSettings.swift          # @Observable; ajustes compartidos (radio de búsqueda)
+        ├── NavigationDestination.swift# Enum AppNavDestination para navegación tipada entre pestañas
+        ├── RouteVariantConfig.swift   # Lógica de variantes de línea (sufijos A/B/C según headsign)
+        ├── NearbyStopsView.swift      # Pestaña "Stops" — lista de paradas cercanas
+        ├── BusMapView.swift           # Pestaña "Map" — mapa MapKit con anotaciones de paradas
+        ├── StopDetailView.swift       # Detalle de parada; llegadas en tiempo real
+        ├── FavoritesView.swift        # Pestaña "Favorites" — lista de favoritos
+        ├── AboutView.swift            # Sheet "About": licencias, fuentes de datos, privacidad
+        ├── StopIconView.swift         # Componentes visuales reutilizables (StopIconView, RouteBadgeView)
+        ├── SheetCloseButton.swift     # Botón de cierre de sheet adaptativo (iOS 26+ / anterior)
+        ├── BridgingHeader.h           # Bridging header (vacío en producción)
+        ├── Localizable.xcstrings      # Cadenas localizadas (en / es / eu)
         └── Assets.xcassets/
 ```
 
@@ -56,17 +62,23 @@ DataManager (singleton @Observable @MainActor)
     ├── Descarga GTFS ZIP (Euskotren)       → euskotrenGtfsDir (Documents/GTFSCache/Euskotren_Data/)
     ├── Descarga RT .pb (Tuvisa)            → pbURL
     ├── Descarga RT .pb (Euskotren)         → euskotrenPbURL
+    ├── Descarga alertas .pb (Tuvisa)       → tuvisaAlertsPbURL    (no crítico: errores ignorados)
+    ├── Descarga alertas .pb (Euskotren)    → euskotrenAlertsPbURL (no crítico: errores ignorados)
     ├── parseInBackground() [Task.detached]
     │       loadGTFS()           → GTFSData (Tuvisa)
     │       loadEuskoTranGTFS()  → GTFSData (tranvía VGZ)
     │       merge tram → main GTFSData
     │       loadTripDelays() ×2  → [String: TripDelayInfo]
+    │       loadAlerts() ×2      → ServiceAlerts (fusionados)
     ├── gtfsData: GTFSData?
     ├── tripDelays: [String: TripDelayInfo]
-    └── activeStopIds: Set<String>   ← precomputado 1 vez tras cada carga
+    ├── serviceAlerts: ServiceAlerts
+    ├── activeStopIds: Set<String>   ← precomputado 1 vez tras cada carga
+    ├── version: Int                 ← se incrementa con cada recarga; útil para onChange
+    └── isRefreshing: Bool           ← true mientras forceRefresh() está en curso
 ```
 
-Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT se descarga en cada refresco.
+Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT y las alertas se descargan en cada refresco. `forceRefresh()` fuerza una recarga inmediata (usado por el botón de recargar manual).
 
 ### Fusión de datos de tranvía
 
@@ -84,8 +96,10 @@ Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT se 
 |----------------------------------|--------------------------------------------------------------------------------------------------|
 | GTFS estático Tuvisa             | `https://www.vitoria-gasteiz.org/we001/http/vgTransit/google_transit.zip`                        |
 | RT trip updates Tuvisa           | `https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb`                   |
+| RT alertas Tuvisa                | `https://opendata.euskadi.eus/transport/moveuskadi/tuvisa/gtfsrt_tuvisa_alerts.pb`               |
 | GTFS estático Euskotren          | `https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfs_euskotren.zip`                  |
 | RT trip updates Euskotren (tram) | `https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfsrt_euskotren_trip_updates.pb`    |
+| RT alertas Euskotren (tram)      | `https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfsrt_euskotren_alerts.pb`          |
 
 ---
 
@@ -99,8 +113,11 @@ Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT se 
 | `StopTimeEntry`   | Horario individual (tripId, stopSequence, arrivalSecs)              |
 | `GTFSData`        | Contenedor: stops, trips, routes, stopArrivals, activeDates         |
 | `TripDelayInfo`   | Retraso RT: generalDelay, stopDelays[stopId], vehicleLabel          |
-| `UpcomingArrival` | Resultado de consulta: horario programado + predicho + retraso      |
-| `NearbyStop`      | Parada + distancia + hasArrivals (para colorear iconos)             |
+| `ServiceAlert`    | Alerta de servicio: headerText, descriptionText                     |
+| `ServiceAlerts`   | Contenedor: stopAlerts[stopId], routeAlerts[routeId], stopIds, routeIds |
+| `UpcomingArrival` | Resultado de consulta: horario programado + predicho + retraso + hasAlert |
+| `RouteTag`        | Línea resumida para listas: shortName, color, hasAlert              |
+| `NearbyStop`      | Parada + distancia + hasArrivals + routes ([RouteTag]) + hasAlert   |
 
 `StopInfo.localizedName` devuelve `nameEu`/`nameEs` según el idioma del sistema, con fallback a `name`.
 
@@ -114,6 +131,8 @@ Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT se 
 | `loadEuskoTranGTFS(folder:)`       | Carga y filtra GTFS Euskotren al tranvía de Vitoria-Gasteiz                            |
 | `loadActiveDatesFromCalendar()`    | Expande `calendar.txt` a fechas individuales + aplica excepciones                      |
 | `loadTripDelays(data:)`            | Decodifica feed GTFS-RT protobuf → `[String: TripDelayInfo]`                           |
+| `loadAlerts(data:)`                | Decodifica feed GTFS-RT Alerts → `ServiceAlerts` (stopAlerts + routeAlerts)            |
+| `routesForStop(stopId:gtfsData:alerts:)` | Calcula `[RouteTag]` para una parada, marcando líneas con alerta               |
 | `computeStopsWithUpcomingArrivals` | Calcula `Set<String>` de stop_id con llegadas en los próximos 60 min (aritmética epoch) |
 | `computeNearbyStops`               | Paradas en radio Haversine, ordenadas por distancia                                    |
 | `computeStopsInBounds`             | Paradas en bounding box del mapa visible                                               |
@@ -129,17 +148,24 @@ Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT se 
 
 ### `ContentView` — TabView raíz
 
-Tres pestañas:
+Tres pestañas con `NavigationStack` independiente cada una:
 1. **Stops** (`NearbyStopsView`) — lista de paradas cercanas ordenadas por distancia.
 2. **Map** (`BusMapView`) — mapa con anotaciones de paradas; se actualiza continuamente al arrastrar (`.continuous`).
 3. **Favorites** (`FavoritesView`) — paradas y líneas guardadas como favoritas.
 
+Tocar una pestaña ya seleccionada resetea su `NavigationPath` al nivel raíz.
+
+`ContentView` inserta un `MapKitPrewarm` (invisible, `UIViewRepresentable`) en el árbol al arrancar para inicializar Metal/MapKit antes de que el usuario abra la pestaña de mapa, eliminando el freeze de ~1 s en la primera apertura.
+
 ### `NearbyStopsView`
 
 - Muestra el estado de carga de `DataManager` (`.idle`, `.loading`, `.failed`, `.ready`).
-- Cada fila usa `StopIconView` (48 pt) + nombre de parada + distancia.
+- Lee `appSettings.searchRadius` del entorno para filtrar paradas por distancia.
+- Cada fila usa `StopIconView` (48 pt) + nombre de parada + distancia + badges de línea (`RouteBadgeView`).
 - Icono en gris si `!NearbyStop.hasArrivals` (sin llegadas en los próximos 60 min).
-- Navega a `StopDetailView` al pulsar una parada.
+- Icono de alerta si `NearbyStop.hasAlert`.
+- Navega a `StopDetailView` (`.stopDetail`) al pulsar una parada.
+- Botón "About" en la barra de navegación que abre `AboutView` como sheet.
 
 ### `BusMapView`
 
@@ -152,9 +178,11 @@ Tres pestañas:
 
 - Muestra llegadas en los próximos 60 min con `computeArrivals`.
 - Si no hay llegadas, muestra `ContentUnavailableView` + sección **"Next scheduled services"** con `computeNextArrivals` (primer servicio por línea en los próximos 7 días).
+- Muestra alertas de servicio (`serviceAlerts.stopAlerts`) al principio de la lista si las hay.
 - `ArrivalRowView.timeLabel`: `Xm` si ≤ 60 min, `Xh Ym` si > 60 min.
 - Botón de estrella (favorito) a la izquierda; botón de cierre a la derecha.
 - Líneas de llegada muestran `RouteBadgeView` (badge cuadrado con color de línea).
+- Desde "Next scheduled services", navega a una vista de llegadas por línea (`.routeArrivals`).
 
 ### `FavoritesView`
 
@@ -180,7 +208,52 @@ Badge cuadrado de 48 pt (44 pt interior + 2 pt reborde):
 
 ---
 
-## Gestión de favoritos (`FavoritesManager.swift`)
+### `AboutView`
+
+Sheet accesible desde el botón de información en `NearbyStopsView`. Muestra:
+- Copyright y términos de uso.
+- Política de privacidad (la app no recoge ningún dato personal).
+- Enlace a la licencia Apache 2.0.
+- Fuentes de datos con licencia CC BY (Tuvisa, Open Data Euskadi/Moveuskadi) y paletas de color CC BY-NC-SA.
+- Enlace al repositorio de GitHub.
+- Sección de pruebas en builds DEBUG (`simulateAlerts`).
+
+---
+
+## Ajustes compartidos (`AppSettings.swift`)
+
+`@Observable final class AppSettings` centraliza los ajustes de usuario que afectan a más de una vista:
+
+| Propiedad       | Tipo     | Persistencia          | Descripción                        |
+|-----------------|----------|-----------------------|------------------------------------|
+| `searchRadius`  | `Double` | `UserDefaults`        | Radio de búsqueda de paradas en metros (por defecto 200 m) |
+
+Se inyecta como `@Observable` en el entorno de SwiftUI desde `BusGasteizApp`. Usar `@Environment(AppSettings.self)` para acceder a él en cualquier vista.
+
+---
+
+## Navegación tipada (`NavigationDestination.swift`)
+
+El enum `AppNavDestination: Hashable` centraliza todos los destinos de navegación push compartidos entre pestañas:
+
+| Case                                                          | Destino                                          |
+|---------------------------------------------------------------|--------------------------------------------------|
+| `.stopDetail(stop:distance:starLeading:)`                     | `StopDetailView` — detalle de llegadas de parada |
+| `.routeArrivals(stop:distance:routeShortName:routeColor:)`    | Vista de llegadas filtradas por línea             |
+
+Cada `NavigationStack` declara `.navigationDestination(for: AppNavDestination.self)` para manejar estos casos.
+
+---
+
+## Variantes de línea (`RouteVariantConfig.swift`)
+
+Algunas líneas tienen ramales diferenciados que se identifican mediante un sufijo en el nombre (p.ej. `5A`, `5B`, `5C`). La función `variantSuffix(routeId:headsign:)` aplica las reglas configuradas en `RouteVariantConfig.rules` para determinar qué sufijo añadir al `shortName` de la línea al mostrarla en la UI.
+
+Para añadir variantes a una nueva línea, añadir entradas al array `rules` dentro de `variantSuffix`. Las reglas se evalúan en orden; la primera coincidencia gana, por lo que las cadenas más específicas deben ir antes.
+
+---
+
+
 
 - `favoriteStopIds: Set<String>` — paradas enteras guardadas.
 - `favoriteRouteKeys: Set<String>` — claves `"stopId::routeShortName"` para líneas concretas.
