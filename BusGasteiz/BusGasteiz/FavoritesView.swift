@@ -79,6 +79,13 @@ struct FavoritesView: View {
                             FavoriteStopRow(stop: row.stop, distance: row.distance,
                                            hasArrivals: row.hasArrivals, hasAlert: row.hasAlert)
                         }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                favorites.toggleStop(row.stop.id)
+                            } label: {
+                                Label("Remove from Favorites", systemImage: "star.slash")
+                            }
+                        }
                     }
                     .onDelete { indexSet in
                         for idx in indexSet { favorites.toggleStop(stopRows[idx].stop.id) }
@@ -98,6 +105,14 @@ struct FavoritesView: View {
                                             stopName: row.stop.localizedName,
                                             isTram: row.stop.isTram,
                                             hasAlert: row.hasAlert)
+                        }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                favorites.toggleRoute(stopId: row.key.stopId,
+                                                      routeShortName: row.key.routeShortName)
+                            } label: {
+                                Label("Remove from Favorites", systemImage: "star.slash")
+                            }
                         }
                     }
                     .onDelete { indexSet in
