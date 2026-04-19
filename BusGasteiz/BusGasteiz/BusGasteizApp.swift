@@ -26,5 +26,14 @@ struct BusGasteizApp: App {
                     locationManager.requestPermissionIfNeeded()
                 }
         }
+        .commands {
+            CommandGroup(replacing: .appVisibility) { }
+            CommandGroup(after: .sidebar) {
+                Button("Actualizar datos") {
+                    Task { await dataManager.forceRefresh() }
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
     }
 }
