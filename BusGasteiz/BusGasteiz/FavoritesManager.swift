@@ -31,7 +31,7 @@ final class FavoritesManager {
     /// Compensa la entrega poco fiable de NSPersistentStoreRemoteChange en foreground.
     func startForegroundPolling() {
         guard pollingTimer == nil else { return }
-        pollingTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        pollingTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
             self?.loadFromStore()
         }
     }

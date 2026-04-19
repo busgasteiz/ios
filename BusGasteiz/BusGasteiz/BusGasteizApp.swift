@@ -40,10 +40,10 @@ struct BusGasteizApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                favoritesManager.startForegroundPolling()
-            } else {
+            if phase == .background {
                 favoritesManager.stopForegroundPolling()
+            } else {
+                favoritesManager.startForegroundPolling()
             }
         }
     }
