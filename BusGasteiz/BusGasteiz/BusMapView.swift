@@ -71,9 +71,9 @@ struct BusMapView: View {
                             }
                         }
                 }
+                .environment(\.colorScheme, colorScheme)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-                .environment(\.colorScheme, colorScheme)
             }
         }
         .onChange(of: selectedStopId) { _, newId in
