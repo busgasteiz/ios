@@ -3,6 +3,23 @@ import UIKit
 import CoreData
 import SwiftData
 
+// MARK: - Actor privado para lecturas desde un contexto independiente
+
+/// Usa un contexto de cola privada (vía @ModelActor) que lee directamente del almacén
+/// persistente, evitando el caché del contexto principal. Necesario en Mac Catalyst
+/// donde el caché del coordinador impide ver los cambios remotos de CloudKit.
+@ModelActor
+private actor FavoritesReader {
+    func loadFavorites() throws -> (stops: [String], routes: [(String, String)]) {
+        let stops = try modelContext.fetch(FetchDescriptor<FavoriteStop>())
+        let routes = try modelContext.fetch(FetchDescriptor<FavoriteRoute>())
+        return (
+            stops.map(\.stopId),
+            routes.map { ($0.stopId, $0.routeShortName) }
+        )
+    }
+}
+
 // MARK: - Gestión de favoritos (sincronizados con iCloud via SwiftData)
 
 @Observable
@@ -13,12 +30,14 @@ final class FavoritesManager {
 
     private let modelContext: ModelContext
     private let container: ModelContainer
+    private let reader: FavoritesReader
     private var pollingTimer: Timer?
 
     init(modelContext: ModelContext, container: ModelContainer) {
         self.modelContext = modelContext
         self.container = container
-        loadFromStore()
+        self.reader = FavoritesReader(modelContainer: container)
+        scheduleLoad()
         migrateFromUserDefaultsIfNeeded()
         observeRemoteChanges()
     }
@@ -27,12 +46,10 @@ final class FavoritesManager {
 
     // MARK: Polling en primer plano
 
-    /// Inicia un timer que recarga los favoritos cada 5 s mientras la app está activa.
-    /// Compensa la entrega poco fiable de NSPersistentStoreRemoteChange en foreground.
     func startForegroundPolling() {
         guard pollingTimer == nil else { return }
         pollingTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
-            self?.loadFromStore()
+            self?.scheduleLoad()
         }
     }
 
@@ -98,14 +115,17 @@ final class FavoritesManager {
         "\(stopId)::\(routeShortName)"
     }
 
-    private func loadFromStore() {
-        // Crear un contexto nuevo evita que el caché del contexto principal
-        // devuelva datos obsoletos tras una sincronización remota de CloudKit.
-        let freshContext = ModelContext(container)
-        let stops = (try? freshContext.fetch(FetchDescriptor<FavoriteStop>())) ?? []
-        favoriteStopIds = Set(stops.map(\.stopId))
-        let routes = (try? freshContext.fetch(FetchDescriptor<FavoriteRoute>())) ?? []
-        favoriteRouteKeys = Set(routes.map { routeKey(stopId: $0.stopId, routeShortName: $0.routeShortName) })
+    /// Lanza una tarea asíncrona que lee desde el actor privado de cola privada
+    /// y actualiza el estado observable en el hilo principal.
+    private func scheduleLoad() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard let result = try? await self.reader.loadFavorites() else { return }
+            self.favoriteStopIds = Set(result.stops)
+            self.favoriteRouteKeys = Set(result.routes.map {
+                self.routeKey(stopId: $0.0, routeShortName: $0.1)
+            })
+        }
     }
 
     private func deleteStops(matching stopId: String) {
@@ -123,7 +143,16 @@ final class FavoritesManager {
     }
 
     private func observeRemoteChanges() {
-        // Notificación específica de CloudKit: se dispara al terminar cada importación.
+        // NSPersistentStoreRemoteChange: el PSC lo publica al escribir cualquier cambio remoto.
+        // Es la señal más fiable en Mac Catalyst (antes de que el contexto principal fusione).
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name.NSPersistentStoreRemoteChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.scheduleLoad()
+        }
+        // Notificación de CloudKit: se dispara al terminar cada importación exitosa.
         NotificationCenter.default.addObserver(
             forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: nil,
@@ -135,7 +164,7 @@ final class FavoritesManager {
                 event.type == .import,
                 event.succeeded
             else { return }
-            self?.loadFromStore()
+            self?.scheduleLoad()
         }
         // Respaldo: cambios llegados mientras la app estaba suspendida.
         NotificationCenter.default.addObserver(
@@ -143,12 +172,10 @@ final class FavoritesManager {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.loadFromStore()
+            self?.scheduleLoad()
         }
     }
 
-    /// Migra los datos almacenados en UserDefaults al nuevo almacén SwiftData.
-    /// Se ejecuta una sola vez; una vez migrado, no vuelve a intentarlo.
     private func migrateFromUserDefaultsIfNeeded() {
         let migratedKey = "favorites.migratedToSwiftData"
         guard !UserDefaults.standard.bool(forKey: migratedKey) else { return }
@@ -163,7 +190,7 @@ final class FavoritesManager {
                 modelContext.insert(FavoriteRoute(stopId: parts[0], routeShortName: parts[1]))
             }
             try? modelContext.save()
-            loadFromStore()
+            scheduleLoad()
         }
         UserDefaults.standard.set(true, forKey: migratedKey)
     }
