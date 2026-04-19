@@ -857,6 +857,22 @@
         }
       }
     },
+    "Remove from Favorites" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar de favoritos"
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kendu gogokoetatik"
+          }
+        }
+      }
+    },
     "Retry" : {
       "comment" : "Button to retry a failed data load",
       "localizations" : {
