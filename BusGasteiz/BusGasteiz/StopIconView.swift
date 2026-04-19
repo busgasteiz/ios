@@ -119,6 +119,11 @@ struct RouteBadgeView: View {
         .overlay(alignment: .topTrailing) {
             if hasAlert { AlertBadge(size: max(9, outerSize * 0.27)) }
         }
+        // Aísla el badge del compositingFilter de la nav bar de UIKit
+        // que en dark mode lava los colores con un blend de luminosidad.
+        // compositingGroup() crea una capa intermedia sin rasterizar,
+        // a diferencia de drawingGroup() que rompe las sombras.
+        .compositingGroup()
     }
 }
 
