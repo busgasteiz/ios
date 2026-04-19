@@ -22,10 +22,17 @@ struct FavoritesView: View {
         .navigationTitle("Favorites")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            if dataManager.isRefreshing {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ProgressView()
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await dataManager.forceRefresh() }
+                } label: {
+                    if dataManager.isRefreshing {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
                 }
+                .disabled(dataManager.isRefreshing)
             }
         }
         .navigationDestination(for: AppNavDestination.self) { dest in
@@ -132,6 +139,11 @@ struct FavoritesView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .refreshable {
+            async let refresh: () = dataManager.forceRefresh()
+            async let minDelay: () = Task.sleep(for: .seconds(1))
+            _ = await (refresh, try? minDelay)
+        }
     }
 
     private func dist(for stop: StopInfo) -> Double {
