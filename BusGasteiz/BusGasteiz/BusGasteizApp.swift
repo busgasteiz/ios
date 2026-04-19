@@ -16,6 +16,7 @@ struct BusGasteizApp: App {
     @State private var dataManager = DataManager.shared
     @State private var locationManager = LocationManager()
     @State private var appSettings = AppSettings()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let config = ModelConfiguration(cloudKitDatabase: .automatic)
@@ -37,6 +38,13 @@ struct BusGasteizApp: App {
                 .task {
                     locationManager.requestPermissionIfNeeded()
                 }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                favoritesManager.startForegroundPolling()
+            } else {
+                favoritesManager.stopForegroundPolling()
+            }
         }
     }
 }

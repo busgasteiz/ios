@@ -13,6 +13,7 @@ final class FavoritesManager {
 
     private let modelContext: ModelContext
     private let container: ModelContainer
+    private var pollingTimer: Timer?
 
     init(modelContext: ModelContext, container: ModelContainer) {
         self.modelContext = modelContext
@@ -23,6 +24,22 @@ final class FavoritesManager {
     }
 
     var isEmpty: Bool { favoriteStopIds.isEmpty && favoriteRouteKeys.isEmpty }
+
+    // MARK: Polling en primer plano
+
+    /// Inicia un timer que recarga los favoritos cada 5 s mientras la app está activa.
+    /// Compensa la entrega poco fiable de NSPersistentStoreRemoteChange en foreground.
+    func startForegroundPolling() {
+        guard pollingTimer == nil else { return }
+        pollingTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            self?.loadFromStore()
+        }
+    }
+
+    func stopForegroundPolling() {
+        pollingTimer?.invalidate()
+        pollingTimer = nil
+    }
 
     // MARK: Paradas
 
@@ -106,16 +123,21 @@ final class FavoritesManager {
     }
 
     private func observeRemoteChanges() {
-        // NSPersistentStoreRemoteChange: CloudKit ha escrito cambios en el store local.
+        // Notificación específica de CloudKit: se dispara al terminar cada importación.
         NotificationCenter.default.addObserver(
-            forName: .NSPersistentStoreRemoteChange,
+            forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] notification in
+            guard
+                let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                    as? NSPersistentCloudKitContainer.Event,
+                event.type == .import,
+                event.succeeded
+            else { return }
             self?.loadFromStore()
         }
-        // willEnterForeground: captura los cambios que llegaron mientras la app
-        // estaba en segundo plano y el observador de arriba no pudo procesarlos.
+        // Respaldo: cambios llegados mientras la app estaba suspendida.
         NotificationCenter.default.addObserver(
             forName: UIApplication.willEnterForegroundNotification,
             object: nil,
