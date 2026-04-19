@@ -184,14 +184,20 @@ struct ArrivalRowView: View {
                             .font(.caption)
                             .foregroundStyle(arrival.delaySecs > 0 ? .red : .green)
                     } else {
-                        Label("Live", systemImage: "dot.radiowaves.left.and.right")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                        HStack(spacing: 4) {
+                            Image(systemName: "dot.radiowaves.left.and.right")
+                            Text("Live")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.green)
                     }
                 } else {
-                    Label("Scheduled", systemImage: "calendar")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                        Text("Scheduled")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             }
 
