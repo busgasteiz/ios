@@ -760,19 +760,19 @@
         }
       }
     },
-    "Sch. %@ • %@": {
+    "Scheduled %@ • %@": {
       "comment": "Scheduled time and delay badge on an arrival row; first %@ is the scheduled HH:mm, second %@ is the delay string e.g. +2m30s",
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prog. %@ • %@"
+            "value": "Programado %@ • %@"
           }
         },
         "eu": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ord. %@ • %@"
+            "value": "Ordutegi %@ • %@"
           }
         }
       }

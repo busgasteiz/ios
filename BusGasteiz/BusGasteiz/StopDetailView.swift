@@ -180,7 +180,7 @@ struct ArrivalRowView: View {
 
                 if arrival.isRealTime {
                     if arrival.delaySecs != 0 {
-                        Text("Sch. \(formatTime(arrival.scheduledTime)) • \(delayText)")
+                        Text("Scheduled \(formatTime(arrival.scheduledTime)) • \(delayText)")
                             .font(.caption)
                             .foregroundStyle(arrival.delaySecs > 0 ? .red : .green)
                     } else {
