@@ -405,7 +405,6 @@
 				DEVELOPMENT_TEAM = RSEH385M54;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BusGasteiz;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "BusGasteiz usa tu ubicación para mostrar las paradas de autobús más cercanas.";
@@ -444,7 +443,6 @@
 				DEVELOPMENT_TEAM = RSEH385M54;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BusGasteiz;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "BusGasteiz usa tu ubicación para mostrar las paradas de autobús más cercanas.";
