@@ -184,7 +184,7 @@ struct ArrivalRowView: View {
                             .font(.caption)
                             .foregroundStyle(arrival.delaySecs > 0 ? .red : .green)
                     } else {
-                        Label("Live", systemImage: "antenna.radiowaves.left.and.right")
+                        Label("Live", systemImage: "dot.radiowaves.left.and.right")
                             .font(.caption)
                             .foregroundStyle(.green)
                     }
