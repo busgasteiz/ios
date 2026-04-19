@@ -10,13 +10,16 @@ import SwiftUI
 private struct AlertBadge: View {
     var size: CGFloat = 12
 
+    // Rojo fijo iOS (#FF3B30) — no adaptivo, igual en claro y oscuro
+    private static let badgeRed = Color(red: 1, green: 0.231, blue: 0.188)
+
     var body: some View {
         ZStack {
             Circle()
                 .fill(Color.white)
                 .frame(width: size + 2, height: size + 2)
             Circle()
-                .fill(Color.red)
+                .fill(Self.badgeRed)
                 .frame(width: size, height: size)
             Image(systemName: "exclamationmark")
                 .font(.system(size: size * 0.6, weight: .bold))

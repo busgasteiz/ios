@@ -8,6 +8,7 @@ struct BusMapView: View {
     @Environment(DataManager.self) private var dataManager
     @Environment(LocationManager.self) private var locationManager
     @Environment(AppSettings.self) private var appSettings
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var position: MapCameraPosition = .automatic
     @State private var mapInteractionModes: MapInteractionModes = .all
@@ -72,6 +73,7 @@ struct BusMapView: View {
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .environment(\.colorScheme, colorScheme)
             }
         }
         .onChange(of: selectedStopId) { _, newId in
