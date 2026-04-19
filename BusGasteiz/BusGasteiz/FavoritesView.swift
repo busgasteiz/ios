@@ -21,6 +21,13 @@ struct FavoritesView: View {
         }
         .navigationTitle("Favorites")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            if dataManager.isRefreshing {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProgressView()
+                }
+            }
+        }
         .navigationDestination(for: AppNavDestination.self) { dest in
             switch dest {
             case .stopDetail(let stop, let distance, let starLeading):

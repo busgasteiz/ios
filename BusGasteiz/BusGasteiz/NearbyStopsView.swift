@@ -11,7 +11,6 @@ struct NearbyStopsView: View {
 
     @State private var nearbyStops: [NearbyStop] = []
     @State private var recomputeTask: Task<Void, Never>?
-    @State private var isReloading = false
     @State private var isLocating = false
     @State private var showingAbout = false
 
@@ -199,22 +198,15 @@ struct NearbyStopsView: View {
     private var reloadButton: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Button {
-                Task {
-                    isReloading = true
-                    async let refresh: () = dataManager.forceRefresh()
-                    async let minDelay: () = Task.sleep(for: .seconds(1))
-                    _ = await (refresh, try? minDelay)
-                    recompute()
-                    isReloading = false
-                }
+                Task { await dataManager.forceRefresh() }
             } label: {
-                if isReloading {
+                if dataManager.isRefreshing {
                     ProgressView()
                 } else {
                     Image(systemName: "arrow.clockwise")
                 }
             }
-            .disabled(isReloading)
+            .disabled(dataManager.isRefreshing)
         }
     }
 

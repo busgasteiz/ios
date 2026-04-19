@@ -24,6 +24,7 @@ final class DataManager {
     /// Set de stop_id con llegadas en los próximos 60 min. Se actualiza al cargar datos.
     var activeStopIds: Set<String> = []
     var lastRefresh: Date?
+    private(set) var isRefreshing = false
     /// Se incrementa con cada recarga; útil para `onChange` en vistas.
     private(set) var version: Int = 0
 
@@ -74,7 +75,11 @@ final class DataManager {
     }
 
     func forceRefresh() async {
+        isRefreshing = true
+        async let minDelay: () = Task.sleep(for: .seconds(1))
         await performRefresh()
+        _ = try? await minDelay
+        isRefreshing = false
     }
 
     // MARK: Lógica interna

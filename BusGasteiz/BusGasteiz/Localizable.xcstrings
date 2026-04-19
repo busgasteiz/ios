@@ -261,6 +261,9 @@
         }
       }
     },
+    "Actualizar datos" : {
+
+    },
     "Apache License 2.0" : {
       "comment" : "App licence name shown in the about screen",
       "localizations" : {
