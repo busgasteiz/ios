@@ -119,9 +119,6 @@ struct RouteBadgeView: View {
         .overlay(alignment: .topTrailing) {
             if hasAlert { AlertBadge(size: max(9, outerSize * 0.27)) }
         }
-        // Rasteriza el badge para evitar que el efecto vibrancy de la
-        // navigation bar de UIKit lave los colores cuando se muestra en toolbar.
-        .drawingGroup()
     }
 }
 

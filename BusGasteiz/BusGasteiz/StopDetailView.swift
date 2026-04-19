@@ -365,6 +365,7 @@ struct RouteArrivalsView: View {
         }
         .navigationTitle(String(format: String(localized: "Line %@"), routeShortName))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 8) {
