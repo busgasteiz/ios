@@ -24,7 +24,7 @@ struct BusGasteizApp: App {
             configurations: config
         )
         container = c
-        _favoritesManager = State(wrappedValue: FavoritesManager(modelContext: c.mainContext))
+        _favoritesManager = State(wrappedValue: FavoritesManager(modelContext: c.mainContext, container: c))
     }
 
     var body: some Scene {

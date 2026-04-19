@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import CoreData
 import SwiftData
 
@@ -11,9 +12,11 @@ final class FavoritesManager {
     private(set) var favoriteRouteKeys: Set<String> = []  // formato: "stopId::routeShortName"
 
     private let modelContext: ModelContext
+    private let container: ModelContainer
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, container: ModelContainer) {
         self.modelContext = modelContext
+        self.container = container
         loadFromStore()
         migrateFromUserDefaultsIfNeeded()
         observeRemoteChanges()
@@ -79,9 +82,12 @@ final class FavoritesManager {
     }
 
     private func loadFromStore() {
-        let stops = (try? modelContext.fetch(FetchDescriptor<FavoriteStop>())) ?? []
+        // Crear un contexto nuevo evita que el caché del contexto principal
+        // devuelva datos obsoletos tras una sincronización remota de CloudKit.
+        let freshContext = ModelContext(container)
+        let stops = (try? freshContext.fetch(FetchDescriptor<FavoriteStop>())) ?? []
         favoriteStopIds = Set(stops.map(\.stopId))
-        let routes = (try? modelContext.fetch(FetchDescriptor<FavoriteRoute>())) ?? []
+        let routes = (try? freshContext.fetch(FetchDescriptor<FavoriteRoute>())) ?? []
         favoriteRouteKeys = Set(routes.map { routeKey(stopId: $0.stopId, routeShortName: $0.routeShortName) })
     }
 
@@ -100,8 +106,18 @@ final class FavoritesManager {
     }
 
     private func observeRemoteChanges() {
+        // NSPersistentStoreRemoteChange: CloudKit ha escrito cambios en el store local.
         NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.loadFromStore()
+        }
+        // willEnterForeground: captura los cambios que llegaron mientras la app
+        // estaba en segundo plano y el observador de arriba no pudo procesarlos.
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in

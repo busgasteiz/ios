@@ -121,6 +121,6 @@ struct ContentView: View {
     ContentView()
         .environment(DataManager.shared)
         .environment(LocationManager())
-        .environment(FavoritesManager(modelContext: container.mainContext))
+        .environment(FavoritesManager(modelContext: container.mainContext, container: container))
         .environment(AppSettings())
 }
