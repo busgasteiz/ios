@@ -72,6 +72,7 @@ struct BusMapView: View {
                         }
                 }
                 .environment(\.colorScheme, colorScheme)
+                .preferredColorScheme(colorScheme)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
