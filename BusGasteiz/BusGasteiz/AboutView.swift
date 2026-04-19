@@ -90,7 +90,7 @@ struct AboutView: View {
                 } header: {
                     Text("Testing")
                 } footer: {
-                    Text("Randomly assigns fake service alerts (30% probability) to stops and routes. Only visible in debug builds.")
+                    Text("Randomly assigns fake service alerts (\(0.3, format: .percent.precision(.fractionLength(0))) probability) to stops and routes. Only visible in debug builds.")
                         .font(.footnote)
                 }
                 #endif
