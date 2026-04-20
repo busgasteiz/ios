@@ -253,12 +253,25 @@ Para añadir variantes a una nueva línea, añadir entradas al array `rules` den
 
 ---
 
-
+## Gestión de favoritos (`FavoritesManager.swift`)
 
 - `favoriteStopIds: Set<String>` — paradas enteras guardadas.
 - `favoriteRouteKeys: Set<String>` — claves `"stopId::routeShortName"` para líneas concretas.
-- Persistencia en `UserDefaults` (`"favoriteStops"` y `"favoriteRoutes"`).
+- Persistencia en iCloud Key-Value Store (`NSUbiquitousKeyValueStore`) bajo las claves `"favoriteStops"` y `"favoriteRoutes"`.
 - Inyectado como `@Observable` en el entorno de SwiftUI.
+
+### Formato de clave de línea favorita y advertencia con IDs de Euskotren
+
+Las claves de línea-en-parada usan el separador `"::"`: `"<stopId>::<routeShortName>"`.
+
+> ⚠️ **Los IDs de parada de Euskotren terminan en dos puntos** (p.ej. `ES:Euskotren:StopPlace:1559:`).
+> Esto produce triples `":::"` en la clave compuesta. Al parsear, **siempre dividir por la última
+> ocurrencia de `"::"` ** (no la primera), ya que los nombres de línea nunca contienen `":"`.
+>
+> En iOS: `key.range(of: "::", options: .backwards)` (ya implementado en `parsedRouteKeys`).
+>
+> No usar `components(separatedBy: "::")`: encontraría el primer `"::"` y dejaría el trailing `":"`
+> del stopId fuera, rompiendo la búsqueda en `gtfs.stops`.
 
 ---
 
