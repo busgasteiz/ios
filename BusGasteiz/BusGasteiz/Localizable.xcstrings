@@ -1082,6 +1082,42 @@
         }
       }
     },
+    "Location unavailable. Using Vitoria-Gasteiz city center." : {
+      "comment" : "Toast shown when GPS is unavailable and the app falls back to the default city center position",
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localización no disponible. Usando el centro de Vitoria-Gasteiz."
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kokapena ez dago eskuragarri. Vitoria-Gasteizko erdgunea erabiltzen da."
+          }
+        }
+      }
+    },
+    "Outside Vitoria-Gasteiz area. Using city center." : {
+      "comment" : "Toast shown when the user's GPS position is outside the 10 km city radius",
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás fuera del área de Vitoria-Gasteiz. Usando el centro de la ciudad."
+          }
+        },
+        "eu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitoria-Gasteizko eremutik kanpo zaude. Hiriguneko erdgunea erabiltzen da."
+          }
+        }
+      }
+    },
     "Updated:" : {
       "comment" : "Prefix label for the last update timestamp shown at the bottom of the nearby stops list",
       "localizations" : {

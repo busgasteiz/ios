@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  BusGasteiz
-//
-//  Created by Ion Jaureguialzo Sarasola on 14/04/2026.
-//
-
 import SwiftUI
 import MapKit
 
@@ -32,7 +25,8 @@ private struct MapKitPrewarm: UIViewRepresentable {
         // tile pipeline al zoom correcto, que es el que usará BusMapView.
         m.setRegion(
             MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: 42.846718, longitude: -2.671622),
+                center: CLLocationCoordinate2D(latitude: vitoriaCenterCoordinate.latitude,
+                                               longitude: vitoriaCenterCoordinate.longitude),
                 latitudinalMeters: 1600,
                 longitudinalMeters: 1600
             ),
@@ -45,6 +39,23 @@ private struct MapKitPrewarm: UIViewRepresentable {
     func updateUIView(_ uiView: MKMapView, context: Context) {}
 }
 
+// MARK: - Toast
+
+private struct ToastView: View {
+    let message: String
+
+    var body: some View {
+        Text(message)
+            .font(.subheadline)
+            .multilineTextAlignment(.center)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 32)
+    }
+}
+
 // MARK: - Pestañas de la app
 
 private enum AppTab { case stops, map, favorites }
@@ -53,9 +64,13 @@ private enum AppTab { case stops, map, favorites }
 
 struct ContentView: View {
 
+    @Environment(LocationManager.self) private var locationManager
+
     @State private var selectedTab: AppTab = .stops
     @State private var stopsPath = NavigationPath()
     @State private var favoritesPath = NavigationPath()
+    @State private var toastMessage: String?
+    @State private var toastDismissTask: Task<Void, Never>?
 
     /// Binding que detecta el toque en la pestaña ya seleccionada y resetea
     /// su pila de navegación al primer nivel.
@@ -75,38 +90,58 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView(selection: tabSelection) {
-            NavigationStack(path: $stopsPath) {
-                NearbyStopsView()
+        ZStack(alignment: .bottom) {
+            TabView(selection: tabSelection) {
+                NavigationStack(path: $stopsPath) {
+                    NearbyStopsView()
+                }
+                .tag(AppTab.stops)
+                .tabItem {
+                    Label("Stops", systemImage: "list.bullet")
+                }
+
+                NavigationStack {
+                    BusMapView()
+                }
+                .tag(AppTab.map)
+                .tabItem {
+                    Label("Map", systemImage: "map")
+                }
+
+                NavigationStack(path: $favoritesPath) {
+                    FavoritesView()
+                }
+                .tag(AppTab.favorites)
+                .tabItem {
+                    Label("Favorites", systemImage: "star")
+                }
             }
-            .tag(AppTab.stops)
-            .tabItem {
-                Label("Stops", systemImage: "list.bullet")
+            .background {
+                // Insertamos el pre-warm en el árbol para que makeUIView() se llame
+                // en cuanto aparece ContentView (mientras el usuario ve la pestaña Stops).
+                MapKitPrewarm()
+                    .frame(width: 1, height: 1)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
 
-            NavigationStack {
-                BusMapView()
-            }
-            .tag(AppTab.map)
-            .tabItem {
-                Label("Map", systemImage: "map")
-            }
-
-            NavigationStack(path: $favoritesPath) {
-                FavoritesView()
-            }
-            .tag(AppTab.favorites)
-            .tabItem {
-                Label("Favorites", systemImage: "star")
+            if let msg = toastMessage {
+                ToastView(message: msg)
+                    .padding(.bottom, 90)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .zIndex(1)
             }
         }
-        .background {
-            // Insertamos el pre-warm en el árbol para que makeUIView() se llame
-            // en cuanto aparece ContentView (mientras el usuario ve la pestaña Stops).
-            MapKitPrewarm()
-                .frame(width: 1, height: 1)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+        .animation(.easeInOut(duration: 0.3), value: toastMessage != nil)
+        .onChange(of: locationManager.positionToastMessage) { _, message in
+            guard let msg = message else { return }
+            locationManager.positionToastMessage = nil
+            toastMessage = msg
+            toastDismissTask?.cancel()
+            toastDismissTask = Task {
+                try? await Task.sleep(for: .seconds(3))
+                toastMessage = nil
+            }
         }
     }
 }

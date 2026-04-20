@@ -159,6 +159,7 @@ struct NearbyStopsView: View {
             Task {
                 isLocating = true
                 async let minDelay: () = Task.sleep(for: .seconds(1))
+                locationManager.resolveActivePosition()
                 recompute()
                 _ = try? await minDelay
                 isLocating = false
@@ -214,22 +215,15 @@ struct NearbyStopsView: View {
 
     private func recompute() {
         guard let gtfs = dataManager.gtfsData else { return }
-        let lat: Double
-        let lon: Double
-        if let loc = locationManager.location {
-            lat = loc.coordinate.latitude
-            lon = loc.coordinate.longitude
-        } else {
-            // Coordenadas por defecto: centro de Vitoria-Gasteiz
-            lat = 42.846718
-            lon = -2.671622
-        }
+        let coord = locationManager.activePosition.coordinate
         let radius = appSettings.searchRadius
         let activeIds = dataManager.activeStopIds
         let alerts = dataManager.serviceAlerts
         recomputeTask?.cancel()
         recomputeTask = Task.detached(priority: .userInitiated) {
-            let stops = computeNearbyStops(lat: lat, lon: lon, radius: radius, gtfsData: gtfs, activeStopIds: activeIds, alerts: alerts)
+            let stops = computeNearbyStops(lat: coord.latitude, lon: coord.longitude,
+                                           radius: radius, gtfsData: gtfs,
+                                           activeStopIds: activeIds, alerts: alerts)
             guard !Task.isCancelled else { return }
             await MainActor.run { nearbyStops = stops }
         }

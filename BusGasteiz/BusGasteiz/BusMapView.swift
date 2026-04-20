@@ -87,19 +87,23 @@ struct BusMapView: View {
             if !visible { selectedStopId = nil }
         }
         .onChange(of: dataManager.version) { recompute() }
-        .onChange(of: locationManager.locationVersion) { recompute() }
+        .onChange(of: locationManager.locationVersion) { centerOnUser() }
         .onChange(of: appSettings.searchRadius) { centerOnUser() }
         .onMapCameraChange(frequency: .continuous) { context in
             visibleRegion = context.region
+            locationManager.activePosition = CLLocation(
+                latitude: context.region.center.latitude,
+                longitude: context.region.center.longitude
+            )
             guard isReady else { return }
             recompute()
         }
         .onAppear {
-            centerOnUser()
             if dataManager.gtfsData == nil {
                 Task { await dataManager.refreshIfNeeded() }
             }
             guard !isReady else { return }
+            centerOnUser()
             Task {
                 try? await Task.sleep(for: .milliseconds(350))
                 isReady = true
@@ -129,6 +133,7 @@ struct BusMapView: View {
             Task {
                 isLocating = true
                 async let minDelay: () = Task.sleep(for: .seconds(1))
+                locationManager.resolveActivePosition()
                 centerOnUser()
                 _ = try? await minDelay
                 isLocating = false
@@ -184,12 +189,7 @@ struct BusMapView: View {
     // MARK: Helpers
 
     private func centerOnUser() {
-        let coord: CLLocationCoordinate2D
-        if let loc = locationManager.location {
-            coord = loc.coordinate
-        } else {
-            coord = CLLocationCoordinate2D(latitude: 42.846718, longitude: -2.671622)
-        }
+        let coord = locationManager.activePosition.coordinate
         let region = MKCoordinateRegion(
             center: coord,
             latitudinalMeters: appSettings.searchRadius * 4,
@@ -226,8 +226,8 @@ struct BusMapView: View {
             refLat = loc.coordinate.latitude
             refLon = loc.coordinate.longitude
         } else {
-            refLat = 42.846718
-            refLon = -2.671622
+            refLat = vitoriaCenterCoordinate.latitude
+            refLon = vitoriaCenterCoordinate.longitude
         }
 
         recomputeTask?.cancel()
