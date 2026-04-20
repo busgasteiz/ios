@@ -63,9 +63,15 @@ final class FavoritesManager {
 
     var parsedRouteKeys: [ParsedRouteKey] {
         favoriteRouteKeys.compactMap { key in
-            let parts = key.components(separatedBy: "::")
-            guard parts.count == 2 else { return nil }
-            return ParsedRouteKey(stopId: parts[0], routeShortName: parts[1])
+            // Split on the LAST "::" to correctly handle stop IDs that contain ":" (e.g. Euskotren
+            // StopPlace IDs like "ES:Euskotren:StopPlace:1559:" have a trailing colon, which
+            // combined with the "::" separator produces ":::". Using the last "::" gives the
+            // correct stopId including the trailing colon.
+            guard let range = key.range(of: "::", options: .backwards) else { return nil }
+            let stopId = String(key[key.startIndex..<range.lowerBound])
+            let routeShortName = String(key[range.upperBound...])
+            guard !stopId.isEmpty, !routeShortName.isEmpty else { return nil }
+            return ParsedRouteKey(stopId: stopId, routeShortName: routeShortName)
         }.sorted { $0.id < $1.id }
     }
 
