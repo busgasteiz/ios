@@ -64,7 +64,7 @@ struct NearbyStopsView: View {
             if nearbyStops.isEmpty {
                 ContentUnavailableView(
                     "No Nearby Stops",
-                    systemImage: "bus.doubledecker",
+                    systemImage: "bus.fill",
                     description: Text("There are no stops within \(Int(appSettings.searchRadius)) m.\nIncrease the search radius.")
                 )
             } else {
