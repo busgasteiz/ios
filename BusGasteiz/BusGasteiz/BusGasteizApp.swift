@@ -28,8 +28,8 @@ struct BusGasteizApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                Task { await dataManager.refreshIfNeeded() }
+            if phase == .active, dataManager.gtfsData != nil, dataManager.needsRefresh {
+                Task { await dataManager.forceRefresh() }
             }
         }
         .commands {

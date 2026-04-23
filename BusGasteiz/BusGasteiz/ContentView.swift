@@ -65,6 +65,7 @@ private enum AppTab { case stops, map, favorites }
 struct ContentView: View {
 
     @Environment(LocationManager.self) private var locationManager
+    @Environment(DataManager.self) private var dataManager
 
     @State private var selectedTab: AppTab = .stops
     @State private var stopsPath = NavigationPath()
@@ -133,6 +134,11 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: toastMessage != nil)
+        .onChange(of: selectedTab) { _, _ in
+            if dataManager.gtfsData != nil, dataManager.needsRefresh {
+                Task { await dataManager.forceRefresh() }
+            }
+        }
         .onChange(of: locationManager.positionToastMessage) { _, message in
             guard let msg = message else { return }
             locationManager.positionToastMessage = nil

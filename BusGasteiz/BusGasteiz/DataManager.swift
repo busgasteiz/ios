@@ -75,6 +75,7 @@ final class DataManager {
     }
 
     func forceRefresh() async {
+        guard !isRefreshing else { return }
         isRefreshing = true
         async let minDelay: () = Task.sleep(for: .seconds(1))
         await performRefresh()
