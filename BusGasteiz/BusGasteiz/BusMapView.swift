@@ -127,8 +127,8 @@ struct BusMapView: View {
             if !visible { selectedStopId = nil }
         }
         .onChange(of: dataManager.version) { recompute() }
-        .onChange(of: locationManager.locationVersion) { centerOnUser() }
-        .onChange(of: appSettings.searchRadius) { centerOnUser() }
+        .onChange(of: locationManager.locationVersion) { guard isReady else { return }; centerOnUser() }
+        .onChange(of: appSettings.searchRadius) { guard isReady else { return }; centerOnUser() }
         .onMapCameraChange(frequency: .continuous) { context in
             visibleRegion = context.region
             locationManager.activePosition = CLLocation(
@@ -143,7 +143,17 @@ struct BusMapView: View {
                 Task { await dataManager.refreshIfNeeded() }
             }
             guard !isReady else { return }
-            centerOnUser()
+            // Centrado inicial: posicionamiento síncrono sin animación.
+            // No se usa centerOnUser() aquí porque sus Tasks asíncronos
+            // extienden la animación de cámara a lo largo de varios frames de
+            // render, lo que produce un parpadeo si el usuario cambia de pestaña
+            // durante los primeros ~300 ms tras abrir el mapa por primera vez.
+            let initialRegion = MKCoordinateRegion(
+                center: locationManager.activePosition.coordinate,
+                latitudinalMeters: appSettings.searchRadius * 4,
+                longitudinalMeters: appSettings.searchRadius * 4
+            )
+            withAnimation(.none) { position = .region(initialRegion) }
             Task {
                 try? await Task.sleep(for: .milliseconds(350))
                 isReady = true
