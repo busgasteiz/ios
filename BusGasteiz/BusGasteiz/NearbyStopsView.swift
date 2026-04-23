@@ -59,14 +59,27 @@ struct NearbyStopsView: View {
 
     // MARK: Subvistas
 
+    private let searchRadiusOptions: [Double] = [100, 200, 300, 500, 1000]
+
+    private var nextSearchRadius: Double? {
+        searchRadiusOptions.first { $0 > appSettings.searchRadius }
+    }
+
     private var stopsListView: some View {
         Group {
             if nearbyStops.isEmpty {
-                ContentUnavailableView(
-                    "No Nearby Stops",
-                    systemImage: "bus.fill",
-                    description: Text("There are no stops within \(Int(appSettings.searchRadius)) m.\nIncrease the search radius.")
-                )
+                ContentUnavailableView {
+                    Label("No Nearby Stops", systemImage: "bus.fill")
+                } description: {
+                    Text("There are no stops within \(Int(appSettings.searchRadius)) m.")
+                } actions: {
+                    if let next = nextSearchRadius {
+                        Button("Increase search radius to \(Int(next)) m") {
+                            appSettings.searchRadius = next
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
             } else {
                 List {
                     ForEach(nearbyStops) { nearby in
