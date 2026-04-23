@@ -14,6 +14,7 @@ struct BusGasteizApp: App {
     @State private var dataManager = DataManager.shared
     @State private var locationManager = LocationManager()
     @State private var appSettings = AppSettings()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -25,6 +26,11 @@ struct BusGasteizApp: App {
                 .task {
                     locationManager.requestPermissionIfNeeded()
                 }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await dataManager.refreshIfNeeded() }
+            }
         }
         .commands {
             CommandGroup(replacing: .appVisibility) { }
