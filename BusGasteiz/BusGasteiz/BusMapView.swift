@@ -40,6 +40,7 @@ struct BusMapView: View {
             UserAnnotation()
         }
         .mapStyle(.standard)
+        .ignoresSafeArea()
         .mapControls {
             MapCompass()
             MapScaleView()
