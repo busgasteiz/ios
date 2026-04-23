@@ -44,6 +44,45 @@ struct BusMapView: View {
             MapCompass()
             MapScaleView()
         }
+        .overlay {
+            switch dataManager.loadState {
+            case .idle, .loading:
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .scaleEffect(1.3)
+                        .tint(.white)
+                    if case .loading(let msg) = dataManager.loadState {
+                        Text(msg)
+                            .font(.footnote)
+                            .foregroundStyle(.white)
+                    }
+                }
+                .padding(20)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            case .failed(let msg):
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.largeTitle)
+                        .foregroundStyle(.orange)
+                    Text(msg)
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        Task { await dataManager.forceRefresh() }
+                    } label: {
+                        Text("Retry")
+                            .bold()
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(24)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+                .padding(.horizontal, 40)
+            case .ready:
+                EmptyView()
+            }
+        }
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

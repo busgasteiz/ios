@@ -15,6 +15,8 @@ struct FavoritesView: View {
                 emptyView
             } else if let gtfs = dataManager.gtfsData {
                 favoritesList(gtfs: gtfs)
+            } else if case .failed(let msg) = dataManager.loadState {
+                errorView(message: msg)
             } else {
                 loadingView
             }
@@ -61,6 +63,28 @@ struct FavoritesView: View {
             ProgressView().scaleEffect(1.5)
             Text("Loading data…").foregroundStyle(.secondary)
         }
+    }
+
+    private func errorView(message: String) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.largeTitle)
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+            Button {
+                Task { await dataManager.forceRefresh() }
+            } label: {
+                Text("Retry")
+                    .bold()
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 40)
+        }
+        .padding()
     }
 
     @ViewBuilder

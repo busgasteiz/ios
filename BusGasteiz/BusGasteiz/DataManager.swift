@@ -128,22 +128,30 @@ final class DataManager {
                 print("[DataManager] GTFS Euskotren en caché y vigente, omitiendo descarga")
             }
 
-            // Feed RT Tuvisa: siempre actualizar
+            // Feed RT Tuvisa: siempre actualizar (no crítico: un fallo no interrumpe la carga)
             if !hasData { loadState = .loading(String(localized: "Downloading real-time data…")) }
             print("[DataManager] Descargando feed RT Tuvisa…")
-            let pbData = try await downloadData(
-                from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
-            )
-            print("[DataManager] Feed RT Tuvisa descargado: \(pbData.count) bytes")
-            try pbData.write(to: pbURL)
+            do {
+                let pbData = try await downloadData(
+                    from: "https://www.vitoria-gasteiz.org/we001/http/vgTransit/realTime/tripUpdates.pb"
+                )
+                print("[DataManager] Feed RT Tuvisa descargado: \(pbData.count) bytes")
+                try pbData.write(to: pbURL)
+            } catch {
+                print("[DataManager] Advertencia: feed RT Tuvisa no disponible: \(error)")
+            }
 
-            // Feed RT Euskotren: siempre actualizar
+            // Feed RT Euskotren: siempre actualizar (no crítico: un fallo no interrumpe la carga)
             print("[DataManager] Descargando feed RT Euskotren…")
-            let euskotrenPbData = try await downloadData(
-                from: "https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfsrt_euskotren_trip_updates.pb"
-            )
-            print("[DataManager] Feed RT Euskotren descargado: \(euskotrenPbData.count) bytes")
-            try euskotrenPbData.write(to: euskotrenPbURL)
+            do {
+                let euskotrenPbData = try await downloadData(
+                    from: "https://opendata.euskadi.eus/transport/moveuskadi/euskotren/gtfsrt_euskotren_trip_updates.pb"
+                )
+                print("[DataManager] Feed RT Euskotren descargado: \(euskotrenPbData.count) bytes")
+                try euskotrenPbData.write(to: euskotrenPbURL)
+            } catch {
+                print("[DataManager] Advertencia: feed RT Euskotren no disponible: \(error)")
+            }
 
             // Alertas de servicio: descarga no crítica (los errores no interrumpen la carga)
             print("[DataManager] Descargando alertas Tuvisa…")
