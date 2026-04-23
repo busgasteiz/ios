@@ -11,8 +11,8 @@ ios/
 ├── BusGasteiz.xcodeproj/
 └── BusGasteiz/
     └── BusGasteiz/               ← Código fuente principal
-        ├── BusGasteizApp.swift        # Entry point; inyecta los @Observable en el entorno
-        ├── ContentView.swift          # TabView raíz (3 pestañas) + pre-calentamiento de MapKit
+        ├── BusGasteizApp.swift        # Entry point; inyecta los @Observable en el entorno; refresco al volver de background
+        ├── ContentView.swift          # TabView raíz (3 pestañas) + pre-calentamiento de MapKit; refresco al cambiar pestaña
         ├── Models.swift               # Structs de datos (StopInfo, TripInfo, GTFSData, …)
         ├── DataManager.swift          # Singleton @Observable; descarga, caché y refresco de datos
         ├── GTFSParser.swift           # Parsers GTFS/GTFS-RT y motor de consulta de llegadas
@@ -75,10 +75,13 @@ DataManager (singleton @Observable @MainActor)
     ├── serviceAlerts: ServiceAlerts
     ├── activeStopIds: Set<String>   ← precomputado 1 vez tras cada carga
     ├── version: Int                 ← se incrementa con cada recarga; útil para onChange
-    └── isRefreshing: Bool           ← true mientras forceRefresh() está en curso
+    ├── isRefreshing: Bool           ← true mientras forceRefresh() está en curso
+    └── needsRefresh: Bool           ← true cuando han pasado ≥10 min desde la última carga
 ```
 
-Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT y las alertas se descargan en cada refresco. `forceRefresh()` fuerza una recarga inmediata (usado por el botón de recargar manual).
+Los datos estáticos (GTFS ZIP) se refrescan cada **10 minutos**. El feed RT y las alertas se descargan en cada refresco. `forceRefresh()` fuerza una recarga inmediata (usado por el botón de recargar manual). Incluye un guard `guard !isRefreshing else { return }` para evitar ejecuciones concurrentes.
+
+**Refresco automático al volver de segundo plano o cambiar de pestaña**: si `gtfsData != nil && needsRefresh`, se llama a `forceRefresh()` (con animación de spinner). Si `gtfsData == nil`, las vistas gestionan la carga inicial con `refreshIfNeeded()` desde su `onAppear`.
 
 ### Fusión de datos de tranvía
 
@@ -155,6 +158,8 @@ Tres pestañas con `NavigationStack` independiente cada una:
 
 Tocar una pestaña ya seleccionada resetea su `NavigationPath` al nivel raíz.
 
+`.onChange(of: selectedTab)` dispara `forceRefresh()` (con animación) si `gtfsData != nil && needsRefresh` al cambiar de pestaña.
+
 `ContentView` inserta un `MapKitPrewarm` (invisible, `UIViewRepresentable`) en el árbol al arrancar para inicializar Metal/MapKit antes de que el usuario abra la pestaña de mapa, eliminando el freeze de ~1 s en la primera apertura.
 
 ### `NearbyStopsView`
@@ -166,13 +171,15 @@ Tocar una pestaña ya seleccionada resetea su `NavigationPath` al nivel raíz.
 - Icono de alerta si `NearbyStop.hasAlert`.
 - Navega a `StopDetailView` (`.stopDetail`) al pulsar una parada.
 - Botón "About" en la barra de navegación que abre `AboutView` como sheet.
+- Si no hay paradas en el radio actual, muestra un mensaje con un enlace tappable **"Increase search radius to Xm"** que salta automáticamente al siguiente radio disponible en `[100, 200, 300, 500, 1000]`.
 
 ### `BusMapView`
 
 - Anotaciones `StopAnnotationView` (usa `StopIconView`) actualizadas en cada frame de desplazamiento del mapa (`.onMapCameraChange(frequency: .continuous)`).
 - Usa `recomputeTask` para cancelar el cálculo anterior antes de lanzar uno nuevo.
 - Al seleccionar una anotación abre un sheet con `StopDetailView`.
-- Menú de radio de búsqueda (100–2000 m); botón de recentrado en la posición del usuario.
+- Menú de radio de búsqueda (100–1000 m); botón de recentrado en la posición del usuario.
+- Overlay con `ProgressView` o panel de error según `DataManager.loadState`, para garantizar que la pantalla nunca queda en blanco.
 
 ### `StopDetailView`
 
@@ -188,6 +195,7 @@ Tocar una pestaña ya seleccionada resetea su `NavigationPath` al nivel raíz.
 
 - Muestra paradas favoritas (`FavoritesManager.favoriteStopIds`) y líneas favoritas por parada (`favoriteRouteKeys`).
 - Estado vacío con instrucciones si no hay favoritos.
+- Muestra `ProgressView` mientras carga y un panel de error si `loadState == .failed`, para garantizar que la pantalla nunca queda en blanco.
 
 ---
 
