@@ -15,8 +15,29 @@ struct StopDetailView: View {
     @State private var nextArrivals: [UpcomingArrival] = []
     @State private var lastUpdate: Date?
 
+    /// Alertas para esta parada: combina alertas de parada y alertas de las líneas que la sirven,
+    /// eliminando duplicados por texto.
     private var stopAlerts: [ServiceAlert] {
-        dataManager.serviceAlerts.stopAlerts[stop.id] ?? []
+        var seen = Set<String>()
+        var alerts: [ServiceAlert] = []
+
+        func add(_ alert: ServiceAlert) {
+            let key = alert.headerText + "\0" + alert.descriptionText
+            if seen.insert(key).inserted { alerts.append(alert) }
+        }
+
+        for alert in dataManager.serviceAlerts.stopAlerts[stop.id] ?? [] { add(alert) }
+
+        if let gtfs = dataManager.gtfsData {
+            let routeIds = Set(
+                (gtfs.stopArrivals[stop.id] ?? [])
+                    .compactMap { gtfs.trips[$0.tripId]?.routeId }
+            )
+            for routeId in routeIds {
+                for alert in dataManager.serviceAlerts.routeAlerts[routeId] ?? [] { add(alert) }
+            }
+        }
+        return alerts
     }
 
     var body: some View {
