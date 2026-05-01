@@ -530,13 +530,15 @@ private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout Servi
     var routeIds:    [String] = []
     var headerParts: [(lang: String, text: String)] = []
     var descParts:   [(lang: String, text: String)] = []
+    var cause: Int = 0
+    var effect: Int = 0
 
     var ar = ProtoReader(data: aData)
     while ar.hasMore {
         guard let t = ar.readTag() else { break }
         switch t.field {
         case 1: _ = ar.readLengthDelimited()  // active_period, ignorar
-        case 2, 5:  // informed_entity (EntitySelector) — campo 2 en GTFS-RT v1, 5 en v2
+        case 2, 5:  // informed_entity (EntitySelector) — campo 2 en GTFS-RT v1, 5 en feed Tuvisa
             if let d = ar.readLengthDelimited() {
                 var es = ProtoReader(data: d)
                 while es.hasMore {
@@ -556,15 +558,21 @@ private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout Servi
                     }
                 }
             }
-        case 6:  // v1: header_text (wire=2); v2: cause enum (wire=0) — respetar wire type
+        case 3:  // cause enum (varint, GTFS-RT estándar campo 3)
+            if let v = ar.readVarint() { cause = Int(v) }
+        case 4:  // effect enum (varint, GTFS-RT estándar campo 4)
+            if let v = ar.readVarint() { effect = Int(v) }
+        case 6:  // v1 GTFS-RT: header_text (wire=2); feed Tuvisa: cause enum (wire=0)
             if t.wire == 2, let d = ar.readLengthDelimited() { headerParts = parseTranslatedString(d) }
-            else if t.wire != 2 { ar.skip(wire: t.wire) }
-        case 7:  // v1: description_text (wire=2); v2: effect enum (wire=0)
+            else if t.wire == 0, let v = ar.readVarint() { cause = Int(v) }
+            else { ar.skip(wire: t.wire) }
+        case 7:  // v1 GTFS-RT: description_text (wire=2); feed Tuvisa: effect enum (wire=0)
             if t.wire == 2, let d = ar.readLengthDelimited() { descParts = parseTranslatedString(d) }
-            else if t.wire != 2 { ar.skip(wire: t.wire) }
-        case 10:  // v2: header_text (TranslatedString)
+            else if t.wire == 0, let v = ar.readVarint() { effect = Int(v) }
+            else { ar.skip(wire: t.wire) }
+        case 10:  // header_text (TranslatedString) en feed Tuvisa
             if let d = ar.readLengthDelimited() { headerParts = parseTranslatedString(d) }
-        case 11:  // v2: description_text (TranslatedString)
+        case 11:  // description_text (TranslatedString) en feed Tuvisa
             if let d = ar.readLengthDelimited() { descParts = parseTranslatedString(d) }
         default: ar.skip(wire: t.wire)
         }
@@ -574,7 +582,9 @@ private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout Servi
     let desc   = bestTranslation(from: descParts)
     guard !header.isEmpty || !desc.isEmpty else { return }
 
-    let alert = ServiceAlert(headerText: header, descriptionText: desc)
+    var alert = ServiceAlert(headerText: header, descriptionText: desc)
+    alert.cause = cause
+    alert.effect = effect
     for sid in stopIds  {
         alerts.stopAlerts[sid,  default: []].append(alert)
         alerts.stopIds.insert(sid)

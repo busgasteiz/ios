@@ -76,6 +76,41 @@ struct ServiceAlert: Identifiable, Sendable {
     let id = UUID()
     let headerText: String
     let descriptionText: String
+    /// GTFS-RT cause enum (0 = no especificado, 1 = UNKNOWN_CAUSE, 5 = DEMONSTRATION, …)
+    var cause: Int = 0
+    /// GTFS-RT effect enum (0 = no especificado, 1 = NO_SERVICE, 3 = SIGNIFICANT_DELAYS, …)
+    var effect: Int = 0
+
+    var causeText: String? {
+        switch cause {
+        case 2:  return String(localized: "Other cause")
+        case 3:  return String(localized: "Technical problem")
+        case 4:  return String(localized: "Strike")
+        case 5:  return String(localized: "Demonstration")
+        case 6:  return String(localized: "Accident")
+        case 7:  return String(localized: "Holiday")
+        case 8:  return String(localized: "Weather")
+        case 9:  return String(localized: "Maintenance")
+        case 10: return String(localized: "Construction")
+        case 11: return String(localized: "Police activity")
+        case 12: return String(localized: "Medical emergency")
+        default: return nil
+        }
+    }
+
+    var effectText: String? {
+        switch effect {
+        case 1:  return String(localized: "No service")
+        case 2:  return String(localized: "Reduced service")
+        case 3:  return String(localized: "Significant delays")
+        case 4:  return String(localized: "Detour")
+        case 5:  return String(localized: "Additional service")
+        case 6:  return String(localized: "Modified service")
+        case 9:  return String(localized: "Stop moved")
+        case 11: return String(localized: "Accessibility issue")
+        default: return nil
+        }
+    }
 }
 
 struct ServiceAlerts: Sendable {

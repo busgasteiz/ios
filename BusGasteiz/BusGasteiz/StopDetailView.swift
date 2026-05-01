@@ -288,6 +288,22 @@ struct AlertRowView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                let causeStr = alert.causeText
+                let effectStr = alert.effectText
+                if causeStr != nil || effectStr != nil {
+                    HStack(spacing: 6) {
+                        if let c = causeStr {
+                            Label(c, systemImage: "info.circle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let e = effectStr {
+                            Label(e, systemImage: "exclamationmark.circle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
         }
         .padding(.vertical, 6)
@@ -325,15 +341,28 @@ struct RouteArrivalsView: View {
     @State private var nextArrival: UpcomingArrival?
     @State private var badgeSnapshot: UIImage? = nil
 
+    /// Alertas para esta línea en esta parada: combina alertas de ruta y alertas de la parada,
+    /// eliminando duplicados por texto.
     private var routeAlerts: [ServiceAlert] {
-        guard let gtfs = dataManager.gtfsData else { return [] }
-        // Buscar route_id: coincidencia directa o por nombre base (variantes como "5A" -> "5")
-        let route = gtfs.routes.values.first(where: { $0.shortName == routeShortName })
-            ?? gtfs.routes.values.first(where: {
-                $0.shortName == String(routeShortName.prefix(while: { $0.isNumber }))
-            })
-        guard let routeId = route?.id else { return [] }
-        return dataManager.serviceAlerts.routeAlerts[routeId] ?? []
+        var seen = Set<String>()
+        var alerts: [ServiceAlert] = []
+
+        func add(_ alert: ServiceAlert) {
+            let key = alert.headerText + "\0" + alert.descriptionText
+            if seen.insert(key).inserted { alerts.append(alert) }
+        }
+
+        if let gtfs = dataManager.gtfsData {
+            let route = gtfs.routes.values.first(where: { $0.shortName == routeShortName })
+                ?? gtfs.routes.values.first(where: {
+                    $0.shortName == String(routeShortName.prefix(while: { $0.isNumber }))
+                })
+            if let routeId = route?.id {
+                for alert in dataManager.serviceAlerts.routeAlerts[routeId] ?? [] { add(alert) }
+            }
+        }
+        for alert in dataManager.serviceAlerts.stopAlerts[stop.id] ?? [] { add(alert) }
+        return alerts
     }
 
     var body: some View {
