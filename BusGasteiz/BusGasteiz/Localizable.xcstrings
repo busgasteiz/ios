@@ -1167,6 +1167,158 @@
           }
         }
       }
+    },
+    "Otra causa.": {
+      "comment": "GTFS-RT alert cause: OTHER_CAUSE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Otra causa." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Beste arrazoi bat." } }
+      }
+    },
+    "Problema técnico en la ruta del autobús.": {
+      "comment": "GTFS-RT alert cause: TECHNICAL_PROBLEM",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Problema técnico en la ruta del autobús." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Arazo teknikoa autobus-ibilbidean." } }
+      }
+    },
+    "Huelga de los trabajadores del autobús.": {
+      "comment": "GTFS-RT alert cause: STRIKE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Huelga de los trabajadores del autobús." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobus-langileen greba." } }
+      }
+    },
+    "Manifestación en la ruta del autobús.": {
+      "comment": "GTFS-RT alert cause: DEMONSTRATION",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Manifestación en la ruta del autobús." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Manifestazioa autobus-ibilbidean." } }
+      }
+    },
+    "Accidente en la ruta del autobús.": {
+      "comment": "GTFS-RT alert cause: ACCIDENT",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Accidente en la ruta del autobús." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Istripua autobus-ibilbidean." } }
+      }
+    },
+    "Día festivo.": {
+      "comment": "GTFS-RT alert cause: HOLIDAY",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Día festivo." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Jai eguna." } }
+      }
+    },
+    "Condiciones meteorológicas adversas.": {
+      "comment": "GTFS-RT alert cause: WEATHER",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Condiciones meteorológicas adversas." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Eguraldi txarreko baldintzak." } }
+      }
+    },
+    "Trabajos de mantenimiento en la ruta.": {
+      "comment": "GTFS-RT alert cause: MAINTENANCE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Trabajos de mantenimiento en la ruta." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Mantentze-lanak ibilbidean." } }
+      }
+    },
+    "Obras de construcción en la ruta.": {
+      "comment": "GTFS-RT alert cause: CONSTRUCTION",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Obras de construcción en la ruta." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Eraikuntza-lanak ibilbidean." } }
+      }
+    },
+    "Actividad policial en la ruta.": {
+      "comment": "GTFS-RT alert cause: POLICE_ACTIVITY",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Actividad policial en la ruta." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Jarduera polizialak ibilbidean." } }
+      }
+    },
+    "Emergencia médica en la ruta.": {
+      "comment": "GTFS-RT alert cause: MEDICAL_EMERGENCY",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Emergencia médica en la ruta." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Larrialdi medikoa ibilbidean." } }
+      }
+    },
+    "El autobús no presta servicio.": {
+      "comment": "GTFS-RT alert effect: NO_SERVICE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "El autobús no presta servicio." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobusak ez du zerbitzurik ematen." } }
+      }
+    },
+    "El servicio de autobús está reducido.": {
+      "comment": "GTFS-RT alert effect: REDUCED_SERVICE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "El servicio de autobús está reducido." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobus-zerbitzua murriztuta dago." } }
+      }
+    },
+    "El autobús circula con retrasos significativos.": {
+      "comment": "GTFS-RT alert effect: SIGNIFICANT_DELAYS",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "El autobús circula con retrasos significativos." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobusa atzerapen handiekin dabil." } }
+      }
+    },
+    "El autobús ha sido desviado de su ruta original.": {
+      "comment": "GTFS-RT alert effect: DETOUR",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "El autobús ha sido desviado de su ruta original." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobusa bere jatorrizko ibilbidetik desbideratu da." } }
+      }
+    },
+    "Se ha añadido servicio adicional de autobús.": {
+      "comment": "GTFS-RT alert effect: ADDITIONAL_SERVICE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "Se ha añadido servicio adicional de autobús." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobus-zerbitzu gehigarria gehitu da." } }
+      }
+    },
+    "El servicio de autobús ha sido modificado.": {
+      "comment": "GTFS-RT alert effect: MODIFIED_SERVICE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "El servicio de autobús ha sido modificado." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobus-zerbitzua aldatu da." } }
+      }
+    },
+    "La parada ha sido trasladada.": {
+      "comment": "GTFS-RT alert effect: STOP_MOVED",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "La parada ha sido trasladada." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Geltokia lekuz aldatu da." } }
+      }
+    },
+    "El acceso al autobús puede estar limitado.": {
+      "comment": "GTFS-RT alert effect: ACCESSIBILITY_ISSUE",
+      "extractionState": "manual",
+      "localizations": {
+        "es": { "stringUnit": { "state": "translated", "value": "El acceso al autobús puede estar limitado." } },
+        "eu": { "stringUnit": { "state": "translated", "value": "Autobusera sartzea mugatuta egon daiteke." } }
+      }
     }
   },
   "version": "1.0"
