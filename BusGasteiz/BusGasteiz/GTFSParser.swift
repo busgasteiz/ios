@@ -686,6 +686,7 @@ nonisolated func computeStopsWithUpcomingArrivals(gtfsData: GTFSData, windowMinu
 /// ordenadas numéricamente/alfabéticamente.
 nonisolated func routesForStop(stopId: String, gtfsData: GTFSData, alerts: ServiceAlerts = ServiceAlerts()) -> [RouteTag] {
     guard let entries = gtfsData.stopArrivals[stopId] else { return [] }
+    let stopHasAlert = alerts.stopIds.contains(stopId)
     var seen = Set<String>()
     var tags: [RouteTag] = []
     for entry in entries {
@@ -694,7 +695,7 @@ nonisolated func routesForStop(stopId: String, gtfsData: GTFSData, alerts: Servi
         let suffix = variantSuffix(routeId: trip.routeId, headsign: trip.headsign)
         let displayName = route.shortName + (suffix ?? "")
         guard seen.insert(displayName).inserted else { continue }
-        let hasAlert = alerts.routeIds.contains(trip.routeId)
+        let hasAlert = stopHasAlert || alerts.routeIds.contains(trip.routeId)
         tags.append(RouteTag(shortName: displayName, color: route.color, hasAlert: hasAlert))
     }
     tags.sort {
