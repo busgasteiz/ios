@@ -81,33 +81,35 @@ struct ServiceAlert: Identifiable, Sendable {
     /// GTFS-RT effect enum (0 = no especificado, 1 = NO_SERVICE, 3 = SIGNIFICANT_DELAYS, …)
     var effect: Int = 0
 
+    /// Frase descriptiva para la causa, equivalente a la app oficial.
     var causeText: String? {
         switch cause {
-        case 2:  return String(localized: "Other cause")
-        case 3:  return String(localized: "Technical problem")
-        case 4:  return String(localized: "Strike")
-        case 5:  return String(localized: "Demonstration")
-        case 6:  return String(localized: "Accident")
-        case 7:  return String(localized: "Holiday")
-        case 8:  return String(localized: "Weather")
-        case 9:  return String(localized: "Maintenance")
-        case 10: return String(localized: "Construction")
-        case 11: return String(localized: "Police activity")
-        case 12: return String(localized: "Medical emergency")
+        case 2:  return String(localized: "Otra causa.")
+        case 3:  return String(localized: "Problema técnico en la ruta del autobús.")
+        case 4:  return String(localized: "Huelga de los trabajadores del autobús.")
+        case 5:  return String(localized: "Manifestación en la ruta del autobús.")
+        case 6:  return String(localized: "Accidente en la ruta del autobús.")
+        case 7:  return String(localized: "Día festivo.")
+        case 8:  return String(localized: "Condiciones meteorológicas adversas.")
+        case 9:  return String(localized: "Trabajos de mantenimiento en la ruta.")
+        case 10: return String(localized: "Obras de construcción en la ruta.")
+        case 11: return String(localized: "Actividad policial en la ruta.")
+        case 12: return String(localized: "Emergencia médica en la ruta.")
         default: return nil
         }
     }
 
+    /// Frase descriptiva para el efecto, equivalente a la app oficial.
     var effectText: String? {
         switch effect {
-        case 1:  return String(localized: "No service")
-        case 2:  return String(localized: "Reduced service")
-        case 3:  return String(localized: "Significant delays")
-        case 4:  return String(localized: "Detour")
-        case 5:  return String(localized: "Additional service")
-        case 6:  return String(localized: "Modified service")
-        case 9:  return String(localized: "Stop moved")
-        case 11: return String(localized: "Accessibility issue")
+        case 1:  return String(localized: "El autobús no presta servicio.")
+        case 2:  return String(localized: "El servicio de autobús está reducido.")
+        case 3:  return String(localized: "El autobús circula con retrasos significativos.")
+        case 4:  return String(localized: "El autobús ha sido desviado de su ruta original.")
+        case 5:  return String(localized: "Se ha añadido servicio adicional de autobús.")
+        case 6:  return String(localized: "El servicio de autobús ha sido modificado.")
+        case 9:  return String(localized: "La parada ha sido trasladada.")
+        case 11: return String(localized: "El acceso al autobús puede estar limitado.")
         default: return nil
         }
     }

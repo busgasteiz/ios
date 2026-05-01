@@ -270,6 +270,15 @@ struct ArrivalRowView: View {
 struct AlertRowView: View {
     let alert: ServiceAlert
 
+    /// Descripción a mostrar: el texto del feed si es distinto al título,
+    /// o el efecto sintetizado desde el enum cuando son iguales.
+    private var displayDescription: String? {
+        if !alert.descriptionText.isEmpty && alert.descriptionText != alert.headerText {
+            return alert.descriptionText
+        }
+        return alert.effectText
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -282,27 +291,11 @@ struct AlertRowView: View {
                         .font(.subheadline.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                if !alert.descriptionText.isEmpty && alert.descriptionText != alert.headerText {
-                    Text(alert.descriptionText)
+                if let desc = displayDescription {
+                    Text(desc)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                }
-                let causeStr = alert.causeText
-                let effectStr = alert.effectText
-                if causeStr != nil || effectStr != nil {
-                    HStack(spacing: 6) {
-                        if let c = causeStr {
-                            Label(c, systemImage: "info.circle")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        if let e = effectStr {
-                            Label(e, systemImage: "exclamationmark.circle")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
                 }
             }
         }
