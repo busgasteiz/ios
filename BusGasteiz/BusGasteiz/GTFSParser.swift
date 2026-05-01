@@ -536,7 +536,7 @@ private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout Servi
         guard let t = ar.readTag() else { break }
         switch t.field {
         case 1: _ = ar.readLengthDelimited()  // active_period, ignorar
-        case 2:  // informed_entity (EntitySelector)
+        case 2, 5:  // informed_entity (EntitySelector) — campo 2 en v1, 5 en v2
             if let d = ar.readLengthDelimited() {
                 var es = ProtoReader(data: d)
                 while es.hasMore {
@@ -556,9 +556,9 @@ private nonisolated func parseAlertEntity(_ data: Data, into alerts: inout Servi
                     }
                 }
             }
-        case 6: // header_text (TranslatedString)
+        case 6, 10:  // header_text — campo 6 en v1, 10 en v2
             if let d = ar.readLengthDelimited() { headerParts = parseTranslatedString(d) }
-        case 7: // description_text (TranslatedString)
+        case 7, 11:  // description_text — campo 7 en v1, 11 en v2
             if let d = ar.readLengthDelimited() { descParts = parseTranslatedString(d) }
         default: ar.skip(wire: t.wire)
         }
