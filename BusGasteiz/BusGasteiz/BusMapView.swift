@@ -29,7 +29,10 @@ struct BusMapView: View {
     /// Mientras esté activo, los cambios de cámara no actualizan el selector de radio.
     @State private var programmaticCameraChange = false
 
+    @Namespace private var mapScope
+
     var body: some View {
+        GeometryReader { geo in
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
@@ -46,9 +49,9 @@ struct BusMapView: View {
             UserAnnotation()
         }
         .mapStyle(.standard)
+        .mapScope(mapScope)
         .ignoresSafeArea()
         .mapControls {
-            MapCompass()
             MapScaleView()
         }
         .overlay {
@@ -89,6 +92,11 @@ struct BusMapView: View {
             case .ready:
                 EmptyView()
             }
+        }
+        .overlay(alignment: .topTrailing) {
+            MapCompass(scope: mapScope)
+                .padding(.top, geo.safeAreaInsets.top + 8)
+                .padding(.trailing, 8)
         }
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
@@ -180,6 +188,7 @@ struct BusMapView: View {
                 recompute()
             }
         }
+        } // GeometryReader
     }
 
     // MARK: Toolbar
