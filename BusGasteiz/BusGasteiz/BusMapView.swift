@@ -49,7 +49,6 @@ struct BusMapView: View {
             UserAnnotation()
         }
         .mapStyle(.standard)
-        .mapScope(mapScope)
         .ignoresSafeArea()
         .mapControls {
             MapScaleView()
@@ -188,6 +187,7 @@ struct BusMapView: View {
             .padding(.top, 8)
             .padding(.trailing, 8)
         } // ZStack
+        .mapScope(mapScope)
     }
 
     // MARK: Toolbar
