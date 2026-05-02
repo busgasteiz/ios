@@ -259,12 +259,15 @@ struct BusMapView: View {
     // MARK: Helpers
 
     /// Devuelve el valor de radio más cercano a los predefinidos a partir del span visible del mapa.
-    /// La región se establece siempre como `radio * 4` en `centerOnUser()`, por lo que
-    /// el radio estimado es `latitudinalMeters / 4`.
+    /// La región se establece siempre como `radio * 4` en `centerOnUser()`. En pantallas portrait
+    /// el span de latitud se amplía para llenar la pantalla, por lo que el span controlado es el
+    /// mínimo de los dos: `min(latMeters, lonMeters) / 4` da el radio correcto en cualquier orientación.
     private func inferSearchRadius(from region: MKCoordinateRegion) -> Double {
         let presets = [100.0, 200.0, 300.0, 500.0, 1000.0]
         let latMeters = region.span.latitudeDelta * 111_000
-        let estimated = latMeters / 4
+        let cosLat = cos(region.center.latitude * .pi / 180)
+        let lonMeters = region.span.longitudeDelta * 111_000 * cosLat
+        let estimated = min(latMeters, lonMeters) / 4
         return presets.min(by: { abs($0 - estimated) < abs($1 - estimated) }) ?? 200
     }
 
