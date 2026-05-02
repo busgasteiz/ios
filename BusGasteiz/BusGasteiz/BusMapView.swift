@@ -184,9 +184,15 @@ struct BusMapView: View {
                 recompute()
             }
         }
-        compassButton
-            .padding(.top, 8)
-            .padding(.trailing, 8)
+        if #available(iOS 26, *) {
+            compassButton
+                .padding(.top, 8)
+                .padding(.trailing, 16)
+        } else {
+            compassButton
+                .padding(.top, 8)
+                .padding(.trailing, 8)
+        }
         } // ZStack
     }
 
