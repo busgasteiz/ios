@@ -25,6 +25,9 @@ struct BusMapView: View {
     /// Evita que actualizar `appSettings.searchRadius` desde el cambio de cámara
     /// dispare `centerOnUser()` en el `onChange` correspondiente.
     @State private var syncingRadiusFromCamera = false
+    /// Indica que el movimiento de cámara actual es programático (centerOnUser).
+    /// Mientras esté activo, los cambios de cámara no actualizan el selector de radio.
+    @State private var programmaticCameraChange = false
 
     var body: some View {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
@@ -146,10 +149,12 @@ struct BusMapView: View {
                 longitude: context.region.center.longitude
             )
             guard isReady else { return }
-            let inferred = inferSearchRadius(from: context.region)
-            if inferred != appSettings.searchRadius {
-                syncingRadiusFromCamera = true
-                appSettings.searchRadius = inferred
+            if !programmaticCameraChange {
+                let inferred = inferSearchRadius(from: context.region)
+                if inferred != appSettings.searchRadius {
+                    syncingRadiusFromCamera = true
+                    appSettings.searchRadius = inferred
+                }
             }
             recompute()
         }
@@ -264,6 +269,7 @@ struct BusMapView: View {
     }
 
     private func centerOnUser() {
+        programmaticCameraChange = true
         let coord = locationManager.activePosition.coordinate
         let region = MKCoordinateRegion(
             center: coord,
@@ -280,6 +286,10 @@ struct BusMapView: View {
             position = .region(region)
             Task { @MainActor in
                 mapInteractionModes = .all
+                // Mantener el flag activo hasta que la animación de cámara concluya.
+                // La duración estándar de MapKit es ~0,3 s; 1,2 s da margen suficiente.
+                try? await Task.sleep(for: .milliseconds(1200))
+                programmaticCameraChange = false
             }
         }
     }
