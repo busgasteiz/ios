@@ -29,10 +29,7 @@ struct BusMapView: View {
     /// Mientras esté activo, los cambios de cámara no actualizan el selector de radio.
     @State private var programmaticCameraChange = false
 
-    @Namespace private var mapScope
-
     var body: some View {
-        ZStack(alignment: .topTrailing) {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
@@ -51,6 +48,7 @@ struct BusMapView: View {
         .mapStyle(.standard)
         .ignoresSafeArea()
         .mapControls {
+            MapCompass()
             MapScaleView()
         }
         .overlay {
@@ -182,12 +180,6 @@ struct BusMapView: View {
                 recompute()
             }
         }
-        MapCompass(scope: mapScope)
-            .mapControlVisibility(.automatic)
-            .padding(.top, 8)
-            .padding(.trailing, 8)
-        } // ZStack
-        .mapScope(mapScope)
     }
 
     // MARK: Toolbar
