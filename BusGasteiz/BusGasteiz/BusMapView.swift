@@ -22,6 +22,9 @@ struct BusMapView: View {
     /// Evita calcular anotaciones durante la animación de entrada de la pestaña.
     /// Se activa una vez (350 ms después del primer onAppear) y ya no se resetea.
     @State private var isReady = false
+    /// Evita que actualizar `appSettings.searchRadius` desde el cambio de cámara
+    /// dispare `centerOnUser()` en el `onChange` correspondiente.
+    @State private var syncingRadiusFromCamera = false
 
     var body: some View {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
@@ -128,7 +131,14 @@ struct BusMapView: View {
         }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { guard isReady else { return }; centerOnUser() }
-        .onChange(of: appSettings.searchRadius) { guard isReady else { return }; centerOnUser() }
+        .onChange(of: appSettings.searchRadius) {
+            guard isReady else { return }
+            if syncingRadiusFromCamera {
+                syncingRadiusFromCamera = false
+                return
+            }
+            centerOnUser()
+        }
         .onMapCameraChange(frequency: .continuous) { context in
             visibleRegion = context.region
             locationManager.activePosition = CLLocation(
@@ -136,6 +146,11 @@ struct BusMapView: View {
                 longitude: context.region.center.longitude
             )
             guard isReady else { return }
+            let inferred = inferSearchRadius(from: context.region)
+            if inferred != appSettings.searchRadius {
+                syncingRadiusFromCamera = true
+                appSettings.searchRadius = inferred
+            }
             recompute()
         }
         .onAppear {
@@ -237,6 +252,16 @@ struct BusMapView: View {
     }
 
     // MARK: Helpers
+
+    /// Devuelve el valor de radio más cercano a los predefinidos a partir del span visible del mapa.
+    /// La región se establece siempre como `radio * 4` en `centerOnUser()`, por lo que
+    /// el radio estimado es `latitudinalMeters / 4`.
+    private func inferSearchRadius(from region: MKCoordinateRegion) -> Double {
+        let presets = [100.0, 200.0, 300.0, 500.0, 1000.0]
+        let latMeters = region.span.latitudeDelta * 111_000
+        let estimated = latMeters / 4
+        return presets.min(by: { abs($0 - estimated) < abs($1 - estimated) }) ?? 200
+    }
 
     private func centerOnUser() {
         let coord = locationManager.activePosition.coordinate
