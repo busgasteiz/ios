@@ -28,8 +28,11 @@ struct BusMapView: View {
     /// Indica que el movimiento de cámara actual es programático (centerOnUser).
     /// Mientras esté activo, los cambios de cámara no actualizan el selector de radio.
     @State private var programmaticCameraChange = false
+    @State private var mapHeading: Double = 0
+    @State private var currentCamera: MapCamera?
 
     var body: some View {
+        ZStack(alignment: .topTrailing) {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
@@ -48,7 +51,6 @@ struct BusMapView: View {
         .mapStyle(.standard)
         .ignoresSafeArea()
         .mapControls {
-            MapCompass()
             MapScaleView()
         }
         .overlay {
@@ -143,6 +145,8 @@ struct BusMapView: View {
             centerOnUser()
         }
         .onMapCameraChange(frequency: .continuous) { context in
+            mapHeading = context.camera.heading
+            currentCamera = context.camera
             visibleRegion = context.region
             locationManager.activePosition = CLLocation(
                 latitude: context.region.center.latitude,
@@ -180,6 +184,10 @@ struct BusMapView: View {
                 recompute()
             }
         }
+        compassButton
+            .padding(.top, 8)
+            .padding(.trailing, 8)
+        } // ZStack
     }
 
     // MARK: Toolbar
@@ -257,6 +265,34 @@ struct BusMapView: View {
     }
 
     // MARK: Helpers
+
+    private var compassButton: some View {
+        Button {
+            guard let cam = currentCamera else { return }
+            withAnimation(.easeOut(duration: 0.3)) {
+                position = .camera(MapCamera(
+                    centerCoordinate: cam.centerCoordinate,
+                    distance: cam.distance,
+                    heading: 0,
+                    pitch: cam.pitch
+                ))
+            }
+        } label: {
+            Image(systemName: "safari")
+                .imageScale(.medium)
+                .rotationEffect(.degrees(-mapHeading))
+                .frame(width: 44, height: 44)
+                .background(.regularMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .opacity(isMapRotated ? 1 : 0)
+        .allowsHitTesting(isMapRotated)
+        .animation(.easeInOut(duration: 0.25), value: isMapRotated)
+    }
+
+    private var isMapRotated: Bool {
+        mapHeading > 0.5 && mapHeading < 359.5
+    }
 
     /// Devuelve el valor de radio más cercano a los predefinidos a partir del span visible del mapa.
     /// La región se establece siempre como `radio * 4` en `centerOnUser()`. En pantallas portrait
