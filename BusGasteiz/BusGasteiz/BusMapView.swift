@@ -32,7 +32,7 @@ struct BusMapView: View {
     @Namespace private var mapScope
 
     var body: some View {
-        GeometryReader { geo in
+        ZStack(alignment: .topTrailing) {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
             // Anotaciones de paradas cercanas
             ForEach(nearbyStops) { nearby in
@@ -92,11 +92,6 @@ struct BusMapView: View {
             case .ready:
                 EmptyView()
             }
-        }
-        .overlay(alignment: .topTrailing) {
-            MapCompass(scope: mapScope)
-                .padding(.top, geo.safeAreaInsets.top + 8)
-                .padding(.trailing, 8)
         }
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
@@ -188,7 +183,11 @@ struct BusMapView: View {
                 recompute()
             }
         }
-        } // GeometryReader
+        MapCompass(scope: mapScope)
+            .mapControlVisibility(.automatic)
+            .padding(.top, 8)
+            .padding(.trailing, 8)
+        } // ZStack
     }
 
     // MARK: Toolbar
