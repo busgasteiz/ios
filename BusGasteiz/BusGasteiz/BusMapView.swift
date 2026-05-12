@@ -67,13 +67,6 @@ struct BusMapView: View {
                     })
                     .stroke(lineColor, lineWidth: 4)
                 }
-                // Polilíneas adicionales: otras mitades de rutas circulares o variantes
-                ForEach(Array(rd.extraPolylines.enumerated()), id: \.offset) { _, pts in
-                    MapPolyline(coordinates: pts.map {
-                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    })
-                    .stroke(lineColor, lineWidth: 4)
-                }
             }
 
             // Posición del usuario

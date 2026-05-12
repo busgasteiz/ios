@@ -986,15 +986,15 @@ nonisolated func computeNextArrivals(
 
 // MARK: - Visualización de recorrido de línea en el mapa
 
-/// Construye los datos necesarios para mostrar el recorrido de una línea en el mapa:
-/// - Lista de paradas que pertenecen a la línea.
-/// - Polilínea antes de la parada seleccionada (en gris).
-/// - Polilínea desde la parada seleccionada hasta el final (en el color de la línea).
-/// - Polilíneas adicionales de otros viajes únicos de la misma línea (en el color de la línea).
+/// Construye los datos necesarios para mostrar el recorrido de una línea en el mapa.
+///
+/// **Rutas lineales bidireccionales** (ida y vuelta): muestra solo el sentido del viaje canónico
+/// (el que pasa por la parada seleccionada). El sentido contrario no se dibuja.
+///
+/// **Rutas circulares**: encadena todos los tramos únicos para formar el círculo completo y
+/// lo divide en gris (antes de la parada seleccionada) y color (desde la parada hasta el final).
 ///
 /// Usa `shapes.txt` si está disponible; en caso contrario traza segmentos parada a parada.
-/// Los viajes se deduplicán por `shape_id` (o por par primer/último stop si no hay shape),
-/// lo que garantiza que las rutas circulares o con variantes dibujen todos sus tramos.
 nonisolated func buildRouteDisplay(
     routeShortName: String,
     routeColor: String,
@@ -1021,8 +1021,6 @@ nonisolated func buildRouteDisplay(
     }
 
     // Deduplica los viajes por shape_id (si existe) o por par (primera parada, última parada).
-    // Esto garantiza que rutas circulares con viajes que cubren distintos tramos dibujen
-    // una polilínea por cada tramo único, sin repetir el mismo recorrido decenas de veces.
     var seenKeys = Set<String>()
     var uniqueTripIds: [String] = []
     for tripId in matchingTripIds {
@@ -1037,8 +1035,7 @@ nonisolated func buildRouteDisplay(
         if seenKeys.insert(key).inserted { uniqueTripIds.append(tripId) }
     }
 
-    // Elige el viaje canónico: el viaje único que pasa por la parada seleccionada y
-    // tiene más paradas (mejor cobertura del tramo en que va el usuario).
+    // Elige el viaje canónico: el que pasa por la parada seleccionada y tiene más paradas.
     var canonicalTripId: String?
     var bestCount = 0
     for tripId in uniqueTripIds {
@@ -1047,45 +1044,16 @@ nonisolated func buildRouteDisplay(
         if stops.count > bestCount { bestCount = stops.count; canonicalTripId = tripId }
     }
 
-    // Función auxiliar: obtiene la polilínea completa de un viaje (shape o paradas).
-    func polylineFor(tripId: String) -> [GeoPoint] {
-        let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
-        if !shapeId.isEmpty, let shape = gtfsData.shapes[shapeId], shape.count > 1 {
-            return shape
-        }
-        return (gtfsData.tripStopSequence[tripId] ?? []).compactMap {
-            gtfsData.stops[$0.stopId].map { GeoPoint(lat: $0.lat, lon: $0.lon) }
-        }
-    }
-
-    // Polilíneas del viaje canónico (gris antes / color después de la parada seleccionada)
+    // Construye las polilíneas direccionadas (gris antes / color después).
     var polylineBefore: [GeoPoint] = []
     var polylineAfter:  [GeoPoint] = []
 
-    if let tripId = canonicalTripId {
-        let orderedStops = gtfsData.tripStopSequence[tripId] ?? []
-        let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
-
-        if !shapeId.isEmpty,
-           let shape = gtfsData.shapes[shapeId], shape.count > 1,
-           let selStop = gtfsData.stops[selectedStopId] {
-            (polylineBefore, polylineAfter) = splitShapeAtStop(
-                shape: shape, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon
-            )
-        } else {
-            (polylineBefore, polylineAfter) = splitStopsAtSelected(
-                orderedStops: orderedStops, selectedStopId: selectedStopId, gtfsData: gtfsData
-            )
-        }
-    }
-
-    // Polilíneas adicionales: el resto de viajes únicos (otras mitades de rutas circulares,
-    // variantes, etc.), dibujadas en el color de la línea.
-    var extraPolylines: [[GeoPoint]] = []
-    for tripId in uniqueTripIds {
-        guard tripId != canonicalTripId else { continue }
-        let poly = polylineFor(tripId: tripId)
-        if poly.count > 1 { extraPolylines.append(poly) }
+    if let canonical = canonicalTripId {
+        let others = uniqueTripIds.filter { $0 != canonical }
+        (polylineBefore, polylineAfter) = routePolylines(
+            canonicalTripId: canonical, otherTripIds: others,
+            selectedStopId: selectedStopId, gtfsData: gtfsData
+        )
     }
 
     // Lista de NearbyStop para las paradas de la línea
@@ -1100,8 +1068,99 @@ nonisolated func buildRouteDisplay(
     }
 
     return RouteDisplayResult(routeShortName: routeShortName, routeColor: routeColor,
-                              stops: stops, polylineBefore: polylineBefore,
-                              polylineAfter: polylineAfter, extraPolylines: extraPolylines)
+                              stops: stops, polylineBefore: polylineBefore, polylineAfter: polylineAfter)
+}
+
+/// Decide si la ruta es circular o bidireccional y devuelve el par de polilíneas (gris, color).
+///
+/// **Bidireccional** (ida/vuelta): los viajes únicos tienen el mismo conjunto de paradas.
+/// Solo se dibuja el sentido del viaje canónico.
+///
+/// **Circular**: los viajes únicos cubren tramos distintos y se encadenan para formar el bucle
+/// completo, que se divide en gris (antes de la parada seleccionada) y color (a partir de ella).
+private nonisolated func routePolylines(
+    canonicalTripId: String,
+    otherTripIds: [String],
+    selectedStopId: String,
+    gtfsData: GTFSData
+) -> (before: [GeoPoint], after: [GeoPoint]) {
+    // Con un único viaje no hay ambigüedad: se divide directamente.
+    if otherTripIds.isEmpty {
+        return splitTripAtStop(tripId: canonicalTripId, selectedStopId: selectedStopId, gtfsData: gtfsData)
+    }
+
+    // Determina si es circular comparando el solapamiento de paradas entre el viaje canónico
+    // y cada viaje adicional. Solapamiento bajo (< 40 % de la unión) → circular.
+    let canonicalStops = Set((gtfsData.tripStopSequence[canonicalTripId] ?? []).map { $0.stopId })
+    let isCircular = otherTripIds.contains { tripId in
+        let otherStops = Set((gtfsData.tripStopSequence[tripId] ?? []).map { $0.stopId })
+        let unionCount = canonicalStops.union(otherStops).count
+        let interCount = canonicalStops.intersection(otherStops).count
+        return unionCount > 0 && Double(interCount) / Double(unionCount) < 0.4
+    }
+
+    if !isCircular {
+        // Ruta bidireccional: mostrar solo el sentido del viaje canónico.
+        return splitTripAtStop(tripId: canonicalTripId, selectedStopId: selectedStopId, gtfsData: gtfsData)
+    }
+
+    // Ruta circular: encadenar todos los tramos en orden y dividir el círculo completo.
+    let fullLoop = chainedPolyline(startTripId: canonicalTripId, otherTripIds: otherTripIds, gtfsData: gtfsData)
+    if let selStop = gtfsData.stops[selectedStopId] {
+        return splitShapeAtStop(shape: fullLoop, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon)
+    }
+    return (fullLoop, [])
+}
+
+/// Encadena tramos de viaje head-to-tail partiendo del viaje canónico.
+/// El último punto de cada tramo y el primero del siguiente se solapan (se elimina el duplicado).
+private nonisolated func chainedPolyline(
+    startTripId: String,
+    otherTripIds: [String],
+    gtfsData: GTFSData
+) -> [GeoPoint] {
+    var orderedIds: [String] = [startTripId]
+    var remaining = otherTripIds
+
+    for _ in 0..<remaining.count {
+        let lastStopId = (gtfsData.tripStopSequence[orderedIds.last!] ?? []).last?.stopId ?? ""
+        if let idx = remaining.firstIndex(where: {
+            (gtfsData.tripStopSequence[$0] ?? []).first?.stopId == lastStopId
+        }) {
+            orderedIds.append(remaining[idx])
+            remaining.remove(at: idx)
+        }
+    }
+
+    var result: [GeoPoint] = []
+    for (i, tripId) in orderedIds.enumerated() {
+        var poly = rawPolylineForTrip(tripId: tripId, gtfsData: gtfsData)
+        if i > 0, !poly.isEmpty { poly.removeFirst() } // evita duplicar el punto de unión
+        result.append(contentsOf: poly)
+    }
+    return result
+}
+
+/// Devuelve la polilínea completa de un viaje (shape si existe, o coordenadas de paradas).
+private nonisolated func rawPolylineForTrip(tripId: String, gtfsData: GTFSData) -> [GeoPoint] {
+    let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
+    if !shapeId.isEmpty, let shape = gtfsData.shapes[shapeId], shape.count > 1 { return shape }
+    return (gtfsData.tripStopSequence[tripId] ?? []).compactMap {
+        gtfsData.stops[$0.stopId].map { GeoPoint(lat: $0.lat, lon: $0.lon) }
+    }
+}
+
+/// Divide la polilínea de un viaje en la parada seleccionada.
+private nonisolated func splitTripAtStop(
+    tripId: String, selectedStopId: String, gtfsData: GTFSData
+) -> (before: [GeoPoint], after: [GeoPoint]) {
+    let orderedStops = gtfsData.tripStopSequence[tripId] ?? []
+    let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
+    if !shapeId.isEmpty, let shape = gtfsData.shapes[shapeId], shape.count > 1,
+       let selStop = gtfsData.stops[selectedStopId] {
+        return splitShapeAtStop(shape: shape, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon)
+    }
+    return splitStopsAtSelected(orderedStops: orderedStops, selectedStopId: selectedStopId, gtfsData: gtfsData)
 }
 
 /// Divide una shape en el punto más próximo a la parada seleccionada.

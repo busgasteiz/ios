@@ -202,7 +202,4 @@ struct RouteDisplayResult: Sendable {
     let polylineBefore: [GeoPoint]
     /// Tramo restante desde la parada seleccionada (se dibuja en el color de la línea).
     let polylineAfter: [GeoPoint]
-    /// Polilíneas de los viajes adicionales (otras mitades de rutas circulares o variantes),
-    /// dibujadas en el color de la línea.
-    let extraPolylines: [[GeoPoint]]
 }
