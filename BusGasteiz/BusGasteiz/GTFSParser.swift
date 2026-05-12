@@ -1090,14 +1090,23 @@ private nonisolated func routePolylines(
     }
 
     // Determina si es circular comparando el solapamiento de paradas entre el viaje canónico
-    // y cada viaje adicional. Solapamiento bajo (< 40 % de la unión) → circular.
+    // y cada viaje adicional.
+    // Métrica: intersección / max(|canónico|, |otro|) — más robusta que intersección/unión
+    // frente a viajes parciales (que son subconjuntos del canónico y tendrían unión grande).
+    //
+    // Lógica: si ALGUNO de los viajes adicionales supera el umbral de solapamiento (≥ 40 %)
+    // existe un "viaje de vuelta" que confirma que la ruta es bidireccional lineal.
+    // Solo si NINGUNO supera el umbral (todas las variantes tienen paradas mayoritariamente
+    // distintas al canónico) se trata la ruta como circular.
     let canonicalStops = Set((gtfsData.tripStopSequence[canonicalTripId] ?? []).map { $0.stopId })
-    let isCircular = otherTripIds.contains { tripId in
+    let canonicalCount = canonicalStops.count
+    let hasBidirectionalPeer = otherTripIds.contains { tripId in
         let otherStops = Set((gtfsData.tripStopSequence[tripId] ?? []).map { $0.stopId })
-        let unionCount = canonicalStops.union(otherStops).count
         let interCount = canonicalStops.intersection(otherStops).count
-        return unionCount > 0 && Double(interCount) / Double(unionCount) < 0.4
+        let maxCount   = max(canonicalCount, otherStops.count)
+        return maxCount > 0 && Double(interCount) / Double(maxCount) >= 0.4
     }
+    let isCircular = !hasBidirectionalPeer
 
     if !isCircular {
         // Ruta bidireccional: mostrar solo el sentido del viaje canónico.
