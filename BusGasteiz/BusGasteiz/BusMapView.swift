@@ -35,6 +35,8 @@ struct BusMapView: View {
     @State private var sheetNavPath: [AppNavDestination] = []
     @State private var routeDisplayData: RouteDisplayResult? = nil
     @State private var computeRouteTask: Task<Void, Never>?
+    /// true cuando el sheet se cierra mediante el botón X; false si se descarta pulsando el mapa.
+    @State private var sheetClosedByButton = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -126,7 +128,10 @@ struct BusMapView: View {
                     StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: false)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                SheetCloseButton { showStopSheet = false }
+                                SheetCloseButton {
+                                    sheetClosedByButton = true
+                                    showStopSheet = false
+                                }
                             }
                         }
                         .navigationDestination(for: AppNavDestination.self) { dest in
@@ -166,7 +171,12 @@ struct BusMapView: View {
         .onChange(of: showStopSheet) { _, visible in
             if !visible {
                 selectedStopId = nil
-                clearRouteFilter()
+                // Si el sheet se descartó pulsando el mapa (no el botón X) y hay una línea
+                // seleccionada, conservamos el filtro para que el usuario pueda explorar el mapa.
+                if sheetClosedByButton || routeDisplayData == nil {
+                    clearRouteFilter()
+                }
+                sheetClosedByButton = false
             }
         }
         .onChange(of: dataManager.version) { recompute() }
