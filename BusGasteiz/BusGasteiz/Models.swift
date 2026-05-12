@@ -46,6 +46,7 @@ struct TripInfo: Sendable {
     let routeId: String
     let headsign: String
     let serviceId: String
+    var shapeId: String = ""
 }
 
 struct RouteInfo: Sendable {
@@ -59,6 +60,18 @@ struct StopTimeEntry: Sendable {
     let tripId: String
     let stopSequence: Int
     let arrivalSecs: Int
+}
+
+/// Punto geográfico (lat/lon) — usado para shapes GTFS y polilíneas.
+struct GeoPoint: Sendable {
+    let lat: Double
+    let lon: Double
+}
+
+/// Parada perteneciente a un viaje, ordenada por secuencia.
+struct OrderedStop: Sendable {
+    let stopId: String
+    let seq: Int
 }
 
 // MARK: - Tiempo real
@@ -134,6 +147,10 @@ struct GTFSData: Sendable {
     var stopArrivals: [String: [StopTimeEntry]] = [:]
     /// date (yyyyMMdd) → Set<service_id>
     var activeDates: [String: Set<String>] = [:]
+    /// shape_id → puntos ordenados por shape_pt_sequence
+    var shapes: [String: [GeoPoint]] = [:]
+    /// trip_id → paradas ordenadas por stop_sequence
+    var tripStopSequence: [String: [OrderedStop]] = [:]
     nonisolated init() {}
 }
 
@@ -172,4 +189,17 @@ struct NearbyStop: Identifiable, Sendable {
     let routes: [RouteTag]
     var hasAlert: Bool = false
     var id: String { stop.id }
+}
+
+// MARK: - Resultado de visualización de recorrido en el mapa
+
+struct RouteDisplayResult: Sendable {
+    let routeShortName: String
+    let routeColor: String
+    /// Paradas que pertenecen a la línea (para mostrar en el mapa).
+    let stops: [NearbyStop]
+    /// Tramo ya recorrido hasta la parada seleccionada (se dibuja en gris).
+    let polylineBefore: [GeoPoint]
+    /// Tramo restante desde la parada seleccionada (se dibuja en el color de la línea).
+    let polylineAfter: [GeoPoint]
 }

@@ -31,11 +31,16 @@ struct BusMapView: View {
     @State private var mapHeading: Double = 0
     @State private var currentCamera: MapCamera?
 
+    // Estado del filtro de línea seleccionada desde el sheet
+    @State private var sheetNavPath: [AppNavDestination] = []
+    @State private var routeDisplayData: RouteDisplayResult? = nil
+    @State private var computeRouteTask: Task<Void, Never>?
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
-            // Anotaciones de paradas cercanas
-            ForEach(nearbyStops) { nearby in
+            // Anotaciones de paradas: sólo las de la línea activa (si hay filtro), o todas las cercanas
+            ForEach(routeDisplayData?.stops ?? nearbyStops) { nearby in
                 Annotation(nearby.stop.localizedName, coordinate: nearby.stop.coordinate, anchor: .bottom) {
                     StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
                                        isTram: nearby.stop.isTram,
@@ -43,6 +48,22 @@ struct BusMapView: View {
                                        hasAlert: nearby.hasAlert)
                 }
                 .tag(nearby.stop.id)
+            }
+
+            // Recorrido de la línea seleccionada: tramo previo (gris) y tramo posterior (color de línea)
+            if let rd = routeDisplayData {
+                if rd.polylineBefore.count > 1 {
+                    MapPolyline(coordinates: rd.polylineBefore.map {
+                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                    })
+                    .stroke(.gray.opacity(0.7), lineWidth: 4)
+                }
+                if rd.polylineAfter.count > 1 {
+                    MapPolyline(coordinates: rd.polylineAfter.map {
+                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                    })
+                    .stroke(Color(hex: rd.routeColor), lineWidth: 4)
+                }
             }
 
             // Posición del usuario
@@ -101,7 +122,7 @@ struct BusMapView: View {
         }
         .sheet(isPresented: $showStopSheet) {
             if let nearby = selectedStop {
-                NavigationStack {
+                NavigationStack(path: $sheetNavPath) {
                     StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: false)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
@@ -125,14 +146,28 @@ struct BusMapView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+        .onChange(of: sheetNavPath) { _, path in
+            if path.isEmpty {
+                clearRouteFilter()
+            } else if case .routeArrivals(let stop, let dist, let name, let color) = path.last {
+                computeRouteDisplayFilter(stop: stop, distance: dist,
+                                          routeShortName: name, routeColor: color)
+            }
+        }
         .onChange(of: selectedStopId) { _, newId in
-            guard let id = newId,
-                  let nearby = nearbyStops.first(where: { $0.id == id }) else { return }
+            guard let id = newId else { return }
+            let displayed = routeDisplayData?.stops ?? nearbyStops
+            guard let nearby = displayed.first(where: { $0.id == id }) else { return }
+            // Al tocar una parada distinta mientras hay filtro activo, limpiamos el filtro
+            if routeDisplayData != nil { clearRouteFilter() }
             selectedStop = nearby
             showStopSheet = true
         }
         .onChange(of: showStopSheet) { _, visible in
-            if !visible { selectedStopId = nil }
+            if !visible {
+                selectedStopId = nil
+                clearRouteFilter()
+            }
         }
         .onChange(of: dataManager.version) { recompute() }
         .onChange(of: locationManager.locationVersion) { guard isReady else { return }; centerOnUser() }
@@ -337,6 +372,37 @@ struct BusMapView: View {
                 programmaticCameraChange = false
             }
         }
+    }
+
+    private func computeRouteDisplayFilter(stop: StopInfo, distance: Double,
+                                            routeShortName: String, routeColor: String) {
+        guard let gtfs = dataManager.gtfsData else { return }
+        let refLat: Double, refLon: Double
+        if let loc = locationManager.location {
+            refLat = loc.coordinate.latitude; refLon = loc.coordinate.longitude
+        } else {
+            refLat = vitoriaCenterCoordinate.latitude; refLon = vitoriaCenterCoordinate.longitude
+        }
+        computeRouteTask?.cancel()
+        let selectedId = stop.id
+        let activeIds  = dataManager.activeStopIds
+        let alerts     = dataManager.serviceAlerts
+        computeRouteTask = Task.detached(priority: .userInitiated) {
+            let result = buildRouteDisplay(
+                routeShortName: routeShortName, routeColor: routeColor,
+                selectedStopId: selectedId, refLat: refLat, refLon: refLon,
+                gtfsData: gtfs, activeStopIds: activeIds, alerts: alerts
+            )
+            guard !Task.isCancelled else { return }
+            await MainActor.run { routeDisplayData = result }
+        }
+    }
+
+    private func clearRouteFilter() {
+        computeRouteTask?.cancel()
+        computeRouteTask = nil
+        routeDisplayData = nil
+        if !sheetNavPath.isEmpty { sheetNavPath = [] }
     }
 
     private func recompute() {

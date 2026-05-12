@@ -314,6 +314,8 @@ final class DataManager {
             for (date, svcIds) in tramGtfs.activeDates {
                 gtfs.activeDates[date, default: []].formUnion(svcIds)
             }
+            for (id, shape)    in tramGtfs.shapes          { gtfs.shapes[id] = shape }
+            for (id, tripStops) in tramGtfs.tripStopSequence { gtfs.tripStopSequence[id] = tripStops }
 
             var delays: [String: TripDelayInfo] = [:]
             if let data = FileManager.default.contents(atPath: pbPath) {
@@ -366,6 +368,8 @@ final class DataManager {
             for (date, svcIds) in tramGtfs.activeDates {
                 gtfs.activeDates[date, default: []].formUnion(svcIds)
             }
+            for (id, shape)    in tramGtfs.shapes          { gtfs.shapes[id] = shape }
+            for (id, tripStops) in tramGtfs.tripStopSequence { gtfs.tripStopSequence[id] = tripStops }
 
             var delays: [String: TripDelayInfo] = [:]
             if let data = FileManager.default.contents(atPath: pbPath) {

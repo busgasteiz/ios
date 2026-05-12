@@ -107,11 +107,13 @@ nonisolated func loadGTFS(folder: String) -> GTFSData {
         let h = splitCSV(lines.removeFirst())
         let iId = idx(h, "trip_id"), iRt = idx(h, "route_id")
         let iHs = idx(h, "trip_headsign"), iSv = idx(h, "service_id")
+        let iSh = idx(h, "shape_id")
         for ln in lines {
             let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
             let r = splitCSV(t); let id = get(r, iId); guard !id.isEmpty else { continue }
             g.trips[id] = TripInfo(id: id, routeId: get(r, iRt),
-                                   headsign: get(r, iHs), serviceId: get(r, iSv))
+                                   headsign: get(r, iHs), serviceId: get(r, iSv),
+                                   shapeId: get(r, iSh))
         }
     }
 
@@ -166,7 +168,27 @@ nonisolated func loadGTFS(folder: String) -> GTFSData {
         }
     }
 
-    // stop_times.txt — índice por stop_id
+    // shapes.txt — polilíneas del recorrido de cada viaje
+    if let raw = try? String(contentsOfFile: "\(folder)/shapes.txt", encoding: .utf8) {
+        var lines = raw.components(separatedBy: "\n")
+        let h = splitCSV(lines.removeFirst())
+        let iId  = idx(h, "shape_id"), iLat = idx(h, "shape_pt_lat")
+        let iLon = idx(h, "shape_pt_lon"), iSeq = idx(h, "shape_pt_sequence")
+        var raw2: [String: [(seq: Int, lat: Double, lon: Double)]] = [:]
+        for ln in lines {
+            let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
+            let r = splitCSV(t)
+            let shapeId = get(r, iId); guard !shapeId.isEmpty else { continue }
+            let lat = Double(get(r, iLat)) ?? 0, lon = Double(get(r, iLon)) ?? 0
+            let seq = Int(get(r, iSeq)) ?? 0
+            raw2[shapeId, default: []].append((seq: seq, lat: lat, lon: lon))
+        }
+        for (shapeId, pts) in raw2 {
+            g.shapes[shapeId] = pts.sorted { $0.seq < $1.seq }.map { GeoPoint(lat: $0.lat, lon: $0.lon) }
+        }
+    }
+
+    // stop_times.txt — índice por stop_id + secuencia por trip_id
     if let raw = try? String(contentsOfFile: "\(folder)/stop_times.txt", encoding: .utf8) {
         var lines = raw.components(separatedBy: "\n")
         let h = splitCSV(lines.removeFirst())
@@ -180,9 +202,12 @@ nonisolated func loadGTFS(folder: String) -> GTFSData {
             var secs = parseSecs(get(r, iAr))
             if secs < 0 { secs = parseSecs(get(r, iDp)) }
             guard secs >= 0 else { continue }
-            let entry = StopTimeEntry(tripId: tid, stopSequence: Int(get(r, iSq)) ?? 0, arrivalSecs: secs)
+            let seq = Int(get(r, iSq)) ?? 0
+            let entry = StopTimeEntry(tripId: tid, stopSequence: seq, arrivalSecs: secs)
             g.stopArrivals[sid, default: []].append(entry)
+            g.tripStopSequence[tid, default: []].append(OrderedStop(stopId: sid, seq: seq))
         }
+        g.tripStopSequence = g.tripStopSequence.mapValues { $0.sorted { $0.seq < $1.seq } }
     }
 
     return g
@@ -314,6 +339,7 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
         let h = splitCSV(lines.removeFirst())
         let iId = localIdx(h, "trip_id"), iRt = localIdx(h, "route_id")
         let iHs = localIdx(h, "trip_headsign"), iSv = localIdx(h, "service_id")
+        let iSh = localIdx(h, "shape_id")
         for ln in lines {
             let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
             let r = splitCSV(t)
@@ -321,7 +347,8 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
             guard !id.isEmpty, tramRouteIds.contains(routeId) else { continue }
             tramTripIds.insert(id)
             g.trips[id] = TripInfo(id: id, routeId: routeId,
-                                   headsign: localGet(r, iHs), serviceId: localGet(r, iSv))
+                                   headsign: localGet(r, iHs), serviceId: localGet(r, iSv),
+                                   shapeId: localGet(r, iSh))
         }
     }
 
@@ -371,10 +398,34 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
             var secs = parseSecs(localGet(r, iAr))
             if secs < 0 { secs = parseSecs(localGet(r, iDp)) }
             guard secs >= 0 else { continue }
-            let entry = StopTimeEntry(tripId: tid,
-                                      stopSequence: Int(localGet(r, iSq)) ?? 0,
-                                      arrivalSecs: secs)
+            let seq = Int(localGet(r, iSq)) ?? 0
+            let entry = StopTimeEntry(tripId: tid, stopSequence: seq, arrivalSecs: secs)
             g.stopArrivals[sid, default: []].append(entry)
+            g.tripStopSequence[tid, default: []].append(OrderedStop(stopId: sid, seq: seq))
+        }
+        g.tripStopSequence = g.tripStopSequence.mapValues { $0.sorted { $0.seq < $1.seq } }
+    }
+
+    // 3b. shapes.txt — cargar solo las shapes de los viajes de tranvía
+    let tramShapeIds = Set(tramTripIds.compactMap { g.trips[$0]?.shapeId }.filter { !$0.isEmpty })
+    if !tramShapeIds.isEmpty,
+       let raw = try? String(contentsOfFile: "\(folder)/shapes.txt", encoding: .utf8) {
+        var lines = raw.components(separatedBy: "\n")
+        let h = splitCSV(lines.removeFirst())
+        let iId  = localIdx(h, "shape_id"), iLat = localIdx(h, "shape_pt_lat")
+        let iLon = localIdx(h, "shape_pt_lon"), iSeq = localIdx(h, "shape_pt_sequence")
+        var rawShapes: [String: [(seq: Int, lat: Double, lon: Double)]] = [:]
+        for ln in lines {
+            let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
+            let r = splitCSV(t)
+            let shapeId = localGet(r, iId)
+            guard !shapeId.isEmpty, tramShapeIds.contains(shapeId) else { continue }
+            let lat = Double(localGet(r, iLat)) ?? 0, lon = Double(localGet(r, iLon)) ?? 0
+            let seq = Int(localGet(r, iSeq)) ?? 0
+            rawShapes[shapeId, default: []].append((seq: seq, lat: lat, lon: lon))
+        }
+        for (shapeId, pts) in rawShapes {
+            g.shapes[shapeId] = pts.sorted { $0.seq < $1.seq }.map { GeoPoint(lat: $0.lat, lon: $0.lon) }
         }
     }
 
@@ -931,4 +982,127 @@ nonisolated func computeNextArrivals(
     }
 
     return bestArrivalByRoute.values.sorted { $0.scheduledTime < $1.scheduledTime }
+}
+
+// MARK: - Visualización de recorrido de línea en el mapa
+
+/// Construye los datos necesarios para mostrar el recorrido de una línea en el mapa:
+/// - Lista de paradas que pertenecen a la línea.
+/// - Polilínea antes de la parada seleccionada (en gris).
+/// - Polilínea desde la parada seleccionada hasta el final (en el color de la línea).
+///
+/// Usa `shapes.txt` si está disponible; en caso contrario traza segmentos parada a parada.
+nonisolated func buildRouteDisplay(
+    routeShortName: String,
+    routeColor: String,
+    selectedStopId: String,
+    refLat: Double,
+    refLon: Double,
+    gtfsData: GTFSData,
+    activeStopIds: Set<String>,
+    alerts: ServiceAlerts
+) -> RouteDisplayResult {
+    // Recoge todos los trip_id que corresponden al nombre de línea pedido
+    var matchingTripIds: [String] = []
+    var allRouteStopIds = Set<String>()
+
+    for (tripId, trip) in gtfsData.trips {
+        guard let route = gtfsData.routes[trip.routeId] else { continue }
+        let suffix = variantSuffix(routeId: trip.routeId, headsign: trip.headsign)
+        let displayName = route.shortName + (suffix ?? "")
+        guard displayName == routeShortName else { continue }
+        matchingTripIds.append(tripId)
+        for ordered in gtfsData.tripStopSequence[tripId] ?? [] {
+            allRouteStopIds.insert(ordered.stopId)
+        }
+    }
+
+    // Elige el viaje que pasa por la parada seleccionada y tiene más paradas
+    var canonicalTripId: String?
+    var bestCount = 0
+    for tripId in matchingTripIds {
+        let stops = gtfsData.tripStopSequence[tripId] ?? []
+        guard stops.contains(where: { $0.stopId == selectedStopId }) else { continue }
+        if stops.count > bestCount { bestCount = stops.count; canonicalTripId = tripId }
+    }
+
+    // Polilíneas
+    var polylineBefore: [GeoPoint] = []
+    var polylineAfter:  [GeoPoint] = []
+
+    if let tripId = canonicalTripId {
+        let orderedStops = gtfsData.tripStopSequence[tripId] ?? []
+        let trip = gtfsData.trips[tripId]
+        let shapeId = trip?.shapeId ?? ""
+
+        if !shapeId.isEmpty,
+           let shape = gtfsData.shapes[shapeId], shape.count > 1,
+           let selStop = gtfsData.stops[selectedStopId] {
+            (polylineBefore, polylineAfter) = splitShapeAtStop(
+                shape: shape, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon
+            )
+        } else {
+            (polylineBefore, polylineAfter) = splitStopsAtSelected(
+                orderedStops: orderedStops, selectedStopId: selectedStopId, gtfsData: gtfsData
+            )
+        }
+    }
+
+    // Lista de NearbyStop para las paradas de la línea
+    let stops: [NearbyStop] = allRouteStopIds.compactMap { stopId in
+        guard let stop = gtfsData.stops[stopId] else { return nil }
+        let d = haversine(lat1: refLat, lon1: refLon, lat2: stop.lat, lon2: stop.lon)
+        let routes = routesForStop(stopId: stopId, gtfsData: gtfsData, alerts: alerts)
+        let hasAlert = alerts.stopIds.contains(stopId) || routes.contains(where: { $0.hasAlert })
+        return NearbyStop(stop: stop, distance: d,
+                          hasArrivals: activeStopIds.contains(stopId),
+                          routes: routes, hasAlert: hasAlert)
+    }
+
+    return RouteDisplayResult(routeShortName: routeShortName, routeColor: routeColor,
+                              stops: stops, polylineBefore: polylineBefore, polylineAfter: polylineAfter)
+}
+
+/// Divide una shape en el punto más próximo a la parada seleccionada.
+/// Devuelve (antes, desde) donde "antes" termina en la coordenada exacta de la parada
+/// y "desde" empieza en ella, garantizando continuidad visual.
+private nonisolated func splitShapeAtStop(
+    shape: [GeoPoint],
+    selectedStopLat: Double,
+    selectedStopLon: Double
+) -> (before: [GeoPoint], after: [GeoPoint]) {
+    guard shape.count > 1 else { return ([], []) }
+
+    var minDist = Double.infinity
+    var splitIdx = 0
+    for (i, pt) in shape.enumerated() {
+        let d = haversine(lat1: pt.lat, lon1: pt.lon, lat2: selectedStopLat, lon2: selectedStopLon)
+        if d < minDist { minDist = d; splitIdx = i }
+    }
+
+    let stopPt = GeoPoint(lat: selectedStopLat, lon: selectedStopLon)
+    var before = Array(shape[...splitIdx])
+    before.append(stopPt)
+    var after: [GeoPoint] = [stopPt]
+    if splitIdx + 1 < shape.count { after += Array(shape[(splitIdx + 1)...]) }
+
+    return (before, after)
+}
+
+/// Divide la secuencia de paradas de un viaje en la parada seleccionada.
+private nonisolated func splitStopsAtSelected(
+    orderedStops: [OrderedStop],
+    selectedStopId: String,
+    gtfsData: GTFSData
+) -> (before: [GeoPoint], after: [GeoPoint]) {
+    guard let selectedIdx = orderedStops.firstIndex(where: { $0.stopId == selectedStopId }) else {
+        return ([], orderedStops.compactMap { gtfsData.stops[$0.stopId].map { GeoPoint(lat: $0.lat, lon: $0.lon) } })
+    }
+    let before = orderedStops[...selectedIdx].compactMap {
+        gtfsData.stops[$0.stopId].map { GeoPoint(lat: $0.lat, lon: $0.lon) }
+    }
+    let after  = orderedStops[selectedIdx...].compactMap {
+        gtfsData.stops[$0.stopId].map { GeoPoint(lat: $0.lat, lon: $0.lon) }
+    }
+    return (before, after)
 }
