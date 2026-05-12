@@ -990,8 +990,11 @@ nonisolated func computeNextArrivals(
 /// - Lista de paradas que pertenecen a la línea.
 /// - Polilínea antes de la parada seleccionada (en gris).
 /// - Polilínea desde la parada seleccionada hasta el final (en el color de la línea).
+/// - Polilíneas adicionales de otros viajes únicos de la misma línea (en el color de la línea).
 ///
 /// Usa `shapes.txt` si está disponible; en caso contrario traza segmentos parada a parada.
+/// Los viajes se deduplicán por `shape_id` (o por par primer/último stop si no hay shape),
+/// lo que garantiza que las rutas circulares o con variantes dibujen todos sus tramos.
 nonisolated func buildRouteDisplay(
     routeShortName: String,
     routeColor: String,
@@ -1017,23 +1020,51 @@ nonisolated func buildRouteDisplay(
         }
     }
 
-    // Elige el viaje que pasa por la parada seleccionada y tiene más paradas
+    // Deduplica los viajes por shape_id (si existe) o por par (primera parada, última parada).
+    // Esto garantiza que rutas circulares con viajes que cubren distintos tramos dibujen
+    // una polilínea por cada tramo único, sin repetir el mismo recorrido decenas de veces.
+    var seenKeys = Set<String>()
+    var uniqueTripIds: [String] = []
+    for tripId in matchingTripIds {
+        let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
+        let key: String
+        if !shapeId.isEmpty {
+            key = "s:\(shapeId)"
+        } else {
+            let seq = gtfsData.tripStopSequence[tripId] ?? []
+            key = "e:\(seq.first?.stopId ?? ""):\(seq.last?.stopId ?? "")"
+        }
+        if seenKeys.insert(key).inserted { uniqueTripIds.append(tripId) }
+    }
+
+    // Elige el viaje canónico: el viaje único que pasa por la parada seleccionada y
+    // tiene más paradas (mejor cobertura del tramo en que va el usuario).
     var canonicalTripId: String?
     var bestCount = 0
-    for tripId in matchingTripIds {
+    for tripId in uniqueTripIds {
         let stops = gtfsData.tripStopSequence[tripId] ?? []
         guard stops.contains(where: { $0.stopId == selectedStopId }) else { continue }
         if stops.count > bestCount { bestCount = stops.count; canonicalTripId = tripId }
     }
 
-    // Polilíneas
+    // Función auxiliar: obtiene la polilínea completa de un viaje (shape o paradas).
+    func polylineFor(tripId: String) -> [GeoPoint] {
+        let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
+        if !shapeId.isEmpty, let shape = gtfsData.shapes[shapeId], shape.count > 1 {
+            return shape
+        }
+        return (gtfsData.tripStopSequence[tripId] ?? []).compactMap {
+            gtfsData.stops[$0.stopId].map { GeoPoint(lat: $0.lat, lon: $0.lon) }
+        }
+    }
+
+    // Polilíneas del viaje canónico (gris antes / color después de la parada seleccionada)
     var polylineBefore: [GeoPoint] = []
     var polylineAfter:  [GeoPoint] = []
 
     if let tripId = canonicalTripId {
         let orderedStops = gtfsData.tripStopSequence[tripId] ?? []
-        let trip = gtfsData.trips[tripId]
-        let shapeId = trip?.shapeId ?? ""
+        let shapeId = gtfsData.trips[tripId]?.shapeId ?? ""
 
         if !shapeId.isEmpty,
            let shape = gtfsData.shapes[shapeId], shape.count > 1,
@@ -1048,6 +1079,15 @@ nonisolated func buildRouteDisplay(
         }
     }
 
+    // Polilíneas adicionales: el resto de viajes únicos (otras mitades de rutas circulares,
+    // variantes, etc.), dibujadas en el color de la línea.
+    var extraPolylines: [[GeoPoint]] = []
+    for tripId in uniqueTripIds {
+        guard tripId != canonicalTripId else { continue }
+        let poly = polylineFor(tripId: tripId)
+        if poly.count > 1 { extraPolylines.append(poly) }
+    }
+
     // Lista de NearbyStop para las paradas de la línea
     let stops: [NearbyStop] = allRouteStopIds.compactMap { stopId in
         guard let stop = gtfsData.stops[stopId] else { return nil }
@@ -1060,7 +1100,8 @@ nonisolated func buildRouteDisplay(
     }
 
     return RouteDisplayResult(routeShortName: routeShortName, routeColor: routeColor,
-                              stops: stops, polylineBefore: polylineBefore, polylineAfter: polylineAfter)
+                              stops: stops, polylineBefore: polylineBefore,
+                              polylineAfter: polylineAfter, extraPolylines: extraPolylines)
 }
 
 /// Divide una shape en el punto más próximo a la parada seleccionada.

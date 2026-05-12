@@ -54,6 +54,7 @@ struct BusMapView: View {
 
             // Recorrido de la línea seleccionada: tramo previo (gris) y tramo posterior (color de línea)
             if let rd = routeDisplayData {
+                let lineColor = Color(hex: rd.routeColor)
                 if rd.polylineBefore.count > 1 {
                     MapPolyline(coordinates: rd.polylineBefore.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
@@ -64,7 +65,14 @@ struct BusMapView: View {
                     MapPolyline(coordinates: rd.polylineAfter.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     })
-                    .stroke(Color(hex: rd.routeColor), lineWidth: 4)
+                    .stroke(lineColor, lineWidth: 4)
+                }
+                // Polilíneas adicionales: otras mitades de rutas circulares o variantes
+                ForEach(Array(rd.extraPolylines.enumerated()), id: \.offset) { _, pts in
+                    MapPolyline(coordinates: pts.map {
+                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                    })
+                    .stroke(lineColor, lineWidth: 4)
                 }
             }
 
