@@ -1050,10 +1050,18 @@ nonisolated func buildRouteDisplay(
 
     if let canonical = canonicalTripId {
         let others = uniqueTripIds.filter { $0 != canonical }
+        let circular = isRouteCircular(canonicalTripId: canonical, otherTripIds: others, gtfsData: gtfsData)
+
         (polylineBefore, polylineAfter) = routePolylines(
-            canonicalTripId: canonical, otherTripIds: others,
+            canonicalTripId: canonical, otherTripIds: others, isCircular: circular,
             selectedStopId: selectedStopId, gtfsData: gtfsData
         )
+
+        // Para rutas lineales, mostrar solo las paradas del viaje canónico (un único sentido).
+        // Para circulares, mantener todas las paradas del bucle completo.
+        if !circular {
+            allRouteStopIds = Set((gtfsData.tripStopSequence[canonical] ?? []).map { $0.stopId })
+        }
     }
 
     // Lista de NearbyStop para las paradas de la línea
@@ -1077,10 +1085,12 @@ nonisolated func buildRouteDisplay(
 /// Solo se dibuja el sentido del viaje canónico.
 ///
 /// **Circular**: los viajes únicos cubren tramos distintos y se encadenan para formar el bucle
-/// completo, que se divide en gris (antes de la parada seleccionada) y color (a partir de ella).
+/// completo. Se muestra en gris solo el tramo de las 3 paradas anteriores a la seleccionada
+/// y en color el resto del bucle a partir de ella.
 private nonisolated func routePolylines(
     canonicalTripId: String,
     otherTripIds: [String],
+    isCircular: Bool,
     selectedStopId: String,
     gtfsData: GTFSData
 ) -> (before: [GeoPoint], after: [GeoPoint]) {
@@ -1089,21 +1099,84 @@ private nonisolated func routePolylines(
         return splitTripAtStop(tripId: canonicalTripId, selectedStopId: selectedStopId, gtfsData: gtfsData)
     }
 
-    // Determina si es circular buscando si existe un "viaje de vuelta" genuino.
-    //
-    // Un viaje de vuelta genuino debe satisfacer las tres condiciones siguientes:
-    //
-    //  1. Longitud comparable: tiene al menos el 80 % de las paradas del canónico.
-    //     Descarta viajes parciales/cortos que son subconjuntos del mismo sentido.
-    //
-    //  2. Solapamiento alto: comparte ≥ 40 % de las paradas con el canónico
-    //     (métrica intersección/max, más estable que intersección/unión).
-    //
-    //  3. Dirección opuesta: su última parada es diferente a la última del canónico.
-    //     Un viaje en el mismo sentido que empieza más tarde terminaría en el mismo
-    //     punto final; el viaje de vuelta termina en el inicio del canónico.
-    //
-    // Si ningún viaje satisface las tres condiciones → no hay vuelta → ruta circular.
+    if !isCircular {
+        // Ruta bidireccional: mostrar solo el sentido del viaje canónico.
+        return splitTripAtStop(tripId: canonicalTripId, selectedStopId: selectedStopId, gtfsData: gtfsData)
+    }
+
+    // Ruta circular: encadenar todos los tramos en orden y dividir el círculo completo.
+    // Se muestra en gris solo las ~3 paradas anteriores a la seleccionada para indicar el sentido.
+    let fullLoop = chainedPolyline(startTripId: canonicalTripId, otherTripIds: otherTripIds, gtfsData: gtfsData)
+    guard let selStop = gtfsData.stops[selectedStopId] else { return (fullLoop, []) }
+    let selStopPt = GeoPoint(lat: selStop.lat, lon: selStop.lon)
+
+    // Construye la secuencia de stop IDs del bucle para localizar "3 paradas atrás".
+    let loopStopIds = chainedStopIdSequence(startTripId: canonicalTripId, otherTripIds: otherTripIds, gtfsData: gtfsData)
+    let totalStops = loopStopIds.count
+
+    // Localiza la parada seleccionada en la secuencia encadenada.
+    guard let selStopIdx = loopStopIds.firstIndex(of: selectedStopId), totalStops > 1 else {
+        // Fallback: toda la parte anterior en gris.
+        return splitShapeAtStop(shape: fullLoop, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon)
+    }
+
+    // Parada de inicio del tramo gris: 3 posiciones antes (con vuelta circular).
+    let greyCount = min(3, totalStops - 1)
+    let greyStopRawIdx = selStopIdx - greyCount
+    let greyStopIdx = ((greyStopRawIdx % totalStops) + totalStops) % totalStops
+    let greyStopId = loopStopIds[greyStopIdx]
+    guard let greyStopInfo = gtfsData.stops[greyStopId] else {
+        return splitShapeAtStop(shape: fullLoop, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon)
+    }
+    let greyStartPt = GeoPoint(lat: greyStopInfo.lat, lon: greyStopInfo.lon)
+
+    // Encuentra los índices en la shape del bucle más próximos a cada parada.
+    let splitIdx = fullLoop.indices.min(by: {
+        haversine(lat1: fullLoop[$0].lat, lon1: fullLoop[$0].lon, lat2: selStop.lat,       lon2: selStop.lon) <
+        haversine(lat1: fullLoop[$1].lat, lon1: fullLoop[$1].lon, lat2: selStop.lat,       lon2: selStop.lon)
+    }) ?? 0
+    let greyIdx = fullLoop.indices.min(by: {
+        haversine(lat1: fullLoop[$0].lat, lon1: fullLoop[$0].lon, lat2: greyStopInfo.lat, lon2: greyStopInfo.lon) <
+        haversine(lat1: fullLoop[$1].lat, lon1: fullLoop[$1].lon, lat2: greyStopInfo.lat, lon2: greyStopInfo.lon)
+    }) ?? 0
+
+    if greyIdx <= splitIdx {
+        // Caso normal: el tramo gris está en la parte "inicial" de la shape.
+        // Gris: greyStart → selStop
+        // Color: selStop → fin shape → inicio shape → greyStart
+        let grey: [GeoPoint] = [greyStartPt] + Array(fullLoop[(greyIdx + 1)...splitIdx]) + [selStopPt]
+        var color: [GeoPoint] = [selStopPt]
+        if splitIdx + 1 < fullLoop.count { color += Array(fullLoop[(splitIdx + 1)...]) }
+        if greyIdx > 0 { color += Array(fullLoop[0..<greyIdx]) }
+        color += [greyStartPt]
+        return (grey, color)
+    } else {
+        // Vuelta circular: la parada seleccionada está cerca del inicio de la shape;
+        // el tramo gris "envuelve" desde el final hasta la parada seleccionada.
+        // Gris: greyStart → fin shape → inicio shape → selStop
+        // Color: selStop → greyStart
+        var grey: [GeoPoint] = [greyStartPt]
+        if greyIdx + 1 < fullLoop.count { grey += Array(fullLoop[(greyIdx + 1)...]) }
+        grey += Array(fullLoop[0...splitIdx]) + [selStopPt]
+        let colorMid = splitIdx + 1 < greyIdx ? Array(fullLoop[(splitIdx + 1)..<greyIdx]) : []
+        let color: [GeoPoint] = [selStopPt] + colorMid + [greyStartPt]
+        return (grey, color)
+    }
+}
+
+/// Determina si una ruta es circular.
+///
+/// Una ruta es circular cuando NINGUNO de los viajes adicionales es un "viaje de vuelta" genuino.
+/// Un viaje de vuelta genuino debe cumplir las tres condiciones:
+///  1. Longitud comparable (≥ 80 % de las paradas del canónico).
+///  2. Solapamiento alto (≥ 40 % de intersección/máx).
+///  3. Termina en una parada distinta a la última del canónico (dirección opuesta).
+private nonisolated func isRouteCircular(
+    canonicalTripId: String,
+    otherTripIds: [String],
+    gtfsData: GTFSData
+) -> Bool {
+    guard !otherTripIds.isEmpty else { return false }
     let canonicalSeq   = gtfsData.tripStopSequence[canonicalTripId] ?? []
     let canonicalStops = Set(canonicalSeq.map { $0.stopId })
     let canonicalCount = canonicalStops.count
@@ -1115,34 +1188,69 @@ private nonisolated func routePolylines(
         let otherCount = otherStops.count
         let otherLast  = otherSeq.last?.stopId ?? ""
 
-        // 1. Longitud comparable (≥ 80 % del canónico).
         guard canonicalCount > 0,
               Double(otherCount) / Double(canonicalCount) >= 0.8 else { return false }
-
-        // 2. Solapamiento alto.
         let interCount = canonicalStops.intersection(otherStops).count
         let maxCount   = max(canonicalCount, otherCount)
         guard maxCount > 0, Double(interCount) / Double(maxCount) >= 0.4 else { return false }
-
-        // 3. Dirección opuesta (no termina en la misma parada que el canónico).
         return otherLast != canonicalLast
     }
-    let isCircular = !hasBidirectionalPeer
-
-    if !isCircular {
-        // Ruta bidireccional: mostrar solo el sentido del viaje canónico.
-        return splitTripAtStop(tripId: canonicalTripId, selectedStopId: selectedStopId, gtfsData: gtfsData)
-    }
-
-    // Ruta circular: encadenar todos los tramos en orden y dividir el círculo completo.
-    let fullLoop = chainedPolyline(startTripId: canonicalTripId, otherTripIds: otherTripIds, gtfsData: gtfsData)
-    if let selStop = gtfsData.stops[selectedStopId] {
-        return splitShapeAtStop(shape: fullLoop, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon)
-    }
-    return (fullLoop, [])
+    return !hasBidirectionalPeer
 }
 
-/// Encadena tramos de viaje head-to-tail partiendo del viaje canónico.
+/// Devuelve la secuencia ordenada de stop_ids del bucle encadenado.
+///
+/// Utiliza la misma lógica de encadenamiento que `chainedPolyline` (primero por stop_id exacto,
+/// después por proximidad geográfica) para garantizar el mismo orden en ambas funciones.
+private nonisolated func chainedStopIdSequence(
+    startTripId: String,
+    otherTripIds: [String],
+    gtfsData: GTFSData
+) -> [String] {
+    // --- 1ª pasada: conectar por stop_id exacto ---
+    var orderedIds: [String] = [startTripId]
+    var remaining = otherTripIds
+
+    for _ in 0..<remaining.count {
+        let lastStopId = (gtfsData.tripStopSequence[orderedIds.last!] ?? []).last?.stopId ?? ""
+        if let idx = remaining.firstIndex(where: {
+            (gtfsData.tripStopSequence[$0] ?? []).first?.stopId == lastStopId
+        }) {
+            orderedIds.append(remaining[idx])
+            remaining.remove(at: idx)
+        }
+    }
+
+    // --- 2ª pasada: conectar por proximidad geográfica ---
+    while !remaining.isEmpty {
+        let currentPoly = rawPolylineForTrip(tripId: orderedIds.last!, gtfsData: gtfsData)
+        guard let lastPt = currentPoly.last else { break }
+        var bestIdx = remaining.startIndex
+        var bestDist = Double.infinity
+        for idx in remaining.indices {
+            if let firstPt = rawPolylineForTrip(tripId: remaining[idx], gtfsData: gtfsData).first {
+                let d = haversine(lat1: lastPt.lat, lon1: lastPt.lon, lat2: firstPt.lat, lon2: firstPt.lon)
+                if d < bestDist { bestDist = d; bestIdx = idx }
+            }
+        }
+        orderedIds.append(remaining[bestIdx])
+        remaining.remove(at: bestIdx)
+    }
+
+    // --- Concatena las secuencias de paradas eliminando la parada duplicada de unión ---
+    var result: [String] = []
+    for (i, tripId) in orderedIds.enumerated() {
+        let stops = (gtfsData.tripStopSequence[tripId] ?? []).map { $0.stopId }
+        if i > 0, !stops.isEmpty, result.last == stops.first {
+            result += Array(stops.dropFirst())
+        } else {
+            result += stops
+        }
+    }
+    return result
+}
+
+
 ///
 /// Primero intenta conectar por stop_id exacto. Si algún tramo queda sin conectar,
 /// usa proximidad geográfica (vecino más cercano) como respaldo, lo que hace el
