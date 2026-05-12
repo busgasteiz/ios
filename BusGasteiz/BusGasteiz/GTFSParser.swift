@@ -1089,22 +1089,43 @@ private nonisolated func routePolylines(
         return splitTripAtStop(tripId: canonicalTripId, selectedStopId: selectedStopId, gtfsData: gtfsData)
     }
 
-    // Determina si es circular comparando el solapamiento de paradas entre el viaje canónico
-    // y cada viaje adicional.
-    // Métrica: intersección / max(|canónico|, |otro|) — más robusta que intersección/unión
-    // frente a viajes parciales (que son subconjuntos del canónico y tendrían unión grande).
+    // Determina si es circular buscando si existe un "viaje de vuelta" genuino.
     //
-    // Lógica: si ALGUNO de los viajes adicionales supera el umbral de solapamiento (≥ 40 %)
-    // existe un "viaje de vuelta" que confirma que la ruta es bidireccional lineal.
-    // Solo si NINGUNO supera el umbral (todas las variantes tienen paradas mayoritariamente
-    // distintas al canónico) se trata la ruta como circular.
-    let canonicalStops = Set((gtfsData.tripStopSequence[canonicalTripId] ?? []).map { $0.stopId })
+    // Un viaje de vuelta genuino debe satisfacer las tres condiciones siguientes:
+    //
+    //  1. Longitud comparable: tiene al menos el 80 % de las paradas del canónico.
+    //     Descarta viajes parciales/cortos que son subconjuntos del mismo sentido.
+    //
+    //  2. Solapamiento alto: comparte ≥ 40 % de las paradas con el canónico
+    //     (métrica intersección/max, más estable que intersección/unión).
+    //
+    //  3. Dirección opuesta: su última parada es diferente a la última del canónico.
+    //     Un viaje en el mismo sentido que empieza más tarde terminaría en el mismo
+    //     punto final; el viaje de vuelta termina en el inicio del canónico.
+    //
+    // Si ningún viaje satisface las tres condiciones → no hay vuelta → ruta circular.
+    let canonicalSeq   = gtfsData.tripStopSequence[canonicalTripId] ?? []
+    let canonicalStops = Set(canonicalSeq.map { $0.stopId })
     let canonicalCount = canonicalStops.count
+    let canonicalLast  = canonicalSeq.last?.stopId ?? ""
+
     let hasBidirectionalPeer = otherTripIds.contains { tripId in
-        let otherStops = Set((gtfsData.tripStopSequence[tripId] ?? []).map { $0.stopId })
+        let otherSeq   = gtfsData.tripStopSequence[tripId] ?? []
+        let otherStops = Set(otherSeq.map { $0.stopId })
+        let otherCount = otherStops.count
+        let otherLast  = otherSeq.last?.stopId ?? ""
+
+        // 1. Longitud comparable (≥ 80 % del canónico).
+        guard canonicalCount > 0,
+              Double(otherCount) / Double(canonicalCount) >= 0.8 else { return false }
+
+        // 2. Solapamiento alto.
         let interCount = canonicalStops.intersection(otherStops).count
-        let maxCount   = max(canonicalCount, otherStops.count)
-        return maxCount > 0 && Double(interCount) / Double(maxCount) >= 0.4
+        let maxCount   = max(canonicalCount, otherCount)
+        guard maxCount > 0, Double(interCount) / Double(maxCount) >= 0.4 else { return false }
+
+        // 3. Dirección opuesta (no termina en la misma parada que el canónico).
+        return otherLast != canonicalLast
     }
     let isCircular = !hasBidirectionalPeer
 
@@ -1122,12 +1143,21 @@ private nonisolated func routePolylines(
 }
 
 /// Encadena tramos de viaje head-to-tail partiendo del viaje canónico.
-/// El último punto de cada tramo y el primero del siguiente se solapan (se elimina el duplicado).
+///
+/// Primero intenta conectar por stop_id exacto. Si algún tramo queda sin conectar,
+/// usa proximidad geográfica (vecino más cercano) como respaldo, lo que hace el
+/// encadenamiento robusto ante diferencias de ID entre el fin de un tramo y el
+/// inicio del siguiente (frecuente en datos reales con quay/stopPlace o ligeras
+/// discrepancias de numeración).
+///
+/// En ambos casos, si el primer punto del tramo añadido está muy cerca del último
+/// del acumulado (< 30 m), se elimina para evitar duplicar el punto de unión.
 private nonisolated func chainedPolyline(
     startTripId: String,
     otherTripIds: [String],
     gtfsData: GTFSData
 ) -> [GeoPoint] {
+    // --- 1ª pasada: conectar por stop_id exacto ---
     var orderedIds: [String] = [startTripId]
     var remaining = otherTripIds
 
@@ -1141,10 +1171,36 @@ private nonisolated func chainedPolyline(
         }
     }
 
+    // --- 2ª pasada: conectar tramos restantes por proximidad geográfica ---
+    // Se ejecuta solo cuando la primera pasada no pudo enlazar algún tramo.
+    while !remaining.isEmpty {
+        let currentPoly = rawPolylineForTrip(tripId: orderedIds.last!, gtfsData: gtfsData)
+        guard let lastPt = currentPoly.last else { break }
+        // Encuentra el tramo restante cuyo primer punto sea el más cercano al final actual.
+        var bestIdx = remaining.startIndex
+        var bestDist = Double.infinity
+        for idx in remaining.indices {
+            if let firstPt = rawPolylineForTrip(tripId: remaining[idx], gtfsData: gtfsData).first {
+                let d = haversine(lat1: lastPt.lat, lon1: lastPt.lon,
+                                  lat2: firstPt.lat, lon2: firstPt.lon)
+                if d < bestDist { bestDist = d; bestIdx = idx }
+            }
+        }
+        orderedIds.append(remaining[bestIdx])
+        remaining.remove(at: bestIdx)
+    }
+
+    // --- Construye la polilínea concatenando todos los tramos ordenados ---
     var result: [GeoPoint] = []
     for (i, tripId) in orderedIds.enumerated() {
         var poly = rawPolylineForTrip(tripId: tripId, gtfsData: gtfsData)
-        if i > 0, !poly.isEmpty { poly.removeFirst() } // evita duplicar el punto de unión
+        // Elimina el primer punto si es prácticamente idéntico al último acumulado (≤ 30 m),
+        // evitando duplicar el punto de unión entre tramos.
+        if i > 0, !poly.isEmpty, let lastPt = result.last {
+            let d = haversine(lat1: lastPt.lat, lon1: lastPt.lon,
+                              lat2: poly[0].lat, lon2: poly[0].lon)
+            if d <= 30 { poly.removeFirst() }
+        }
         result.append(contentsOf: poly)
     }
     return result
