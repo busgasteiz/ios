@@ -165,7 +165,7 @@ struct BusMapView: View {
                         : [.medium, .large],
                     selection: $sheetDetent
                 )
-                .presentationDragIndicator(.visible)
+                .presentationDragIndicator(sheetDetent == Self.minimizedDetent ? .hidden : .visible)
                 .interactiveDismissDisabled(routeDisplayData != nil)
                 // Permite interactuar con el mapa hasta el detent medium; solo se bloquea a pantalla completa.
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
