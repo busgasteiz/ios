@@ -1109,7 +1109,7 @@ private nonisolated func routePolylines(
     }
 
     // Ruta circular: encadenar todos los tramos en orden y dividir el círculo completo.
-    // Se muestra en gris solo las ~3 paradas anteriores a la seleccionada para indicar el sentido.
+    // Se muestra en gris la mitad anterior al punto de selección y en color la mitad posterior.
     let fullLoop = chainedPolyline(startTripId: canonicalTripId, otherTripIds: otherTripIds, gtfsData: gtfsData)
     guard let selStop = gtfsData.stops[selectedStopId] else { return (fullLoop, []) }
     let selStopPt = GeoPoint(lat: selStop.lat, lon: selStop.lon)
@@ -1124,8 +1124,8 @@ private nonisolated func routePolylines(
         return splitShapeAtStop(shape: fullLoop, selectedStopLat: selStop.lat, selectedStopLon: selStop.lon)
     }
 
-    // Parada de inicio del tramo gris: 3 posiciones antes (con vuelta circular).
-    let greyCount = min(3, totalStops - 1)
+    // Parada de inicio del tramo gris: mitad del bucle antes de la seleccionada (con vuelta circular).
+    let greyCount = max(1, totalStops / 2)
     let greyStopRawIdx = selStopIdx - greyCount
     let greyStopIdx = ((greyStopRawIdx % totalStops) + totalStops) % totalStops
     let greyStopId = loopStopIds[greyStopIdx]
