@@ -329,6 +329,8 @@ struct RouteArrivalsView: View {
 
     @Environment(DataManager.self)      private var dataManager
     @Environment(FavoritesManager.self) private var favorites
+    @Environment(\.isSheetMinimized)    private var isSheetMinimized
+    @Environment(\.dismissSheet)        private var dismissSheet
 
     @State private var arrivals: [UpcomingArrival] = []
     @State private var nextArrival: UpcomingArrival?
@@ -408,6 +410,7 @@ struct RouteArrivalsView: View {
         }
         .navigationTitle(String(format: String(localized: "Line %@"), routeShortName))
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isSheetMinimized)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 8) {
@@ -417,13 +420,18 @@ struct RouteArrivalsView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                let isFav = favorites.isRouteFavorite(stopId: stop.id, routeShortName: routeShortName)
-                Button {
-                    favorites.toggleRoute(stopId: stop.id, routeShortName: routeShortName)
-                } label: {
-                    Image(systemName: isFav ? "star.fill" : "star")
-                        .foregroundStyle(isFav ? .yellow : .primary)
-                        .animation(.spring(duration: 0.2), value: isFav)
+                if isSheetMinimized {
+                    // En estado minimizado: botón de cierre en lugar de favoritos.
+                    SheetCloseButton(action: dismissSheet)
+                } else {
+                    let isFav = favorites.isRouteFavorite(stopId: stop.id, routeShortName: routeShortName)
+                    Button {
+                        favorites.toggleRoute(stopId: stop.id, routeShortName: routeShortName)
+                    } label: {
+                        Image(systemName: isFav ? "star.fill" : "star")
+                            .foregroundStyle(isFav ? .yellow : .primary)
+                            .animation(.spring(duration: 0.2), value: isFav)
+                    }
                 }
             }
         }

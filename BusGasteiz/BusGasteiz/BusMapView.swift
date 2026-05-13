@@ -129,45 +129,36 @@ struct BusMapView: View {
         }
         .sheet(isPresented: $showStopSheet) {
             if let nearby = selectedStop {
-                VStack(spacing: 0) {
-                    // Barra persistente con el nombre de la línea: visible siempre que haya una
-                    // línea seleccionada, incluso cuando el sheet está minimizado.
-                    if let rd = routeDisplayData {
-                        SheetRouteBar(routeShortName: rd.routeShortName,
-                                      routeColor: rd.routeColor) {
-                            sheetClosedByButton = true
-                            showStopSheet = false
-                        }
-                        Divider()
-                    }
-                    NavigationStack(path: $sheetNavPath) {
-                        StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: false)
-                            .toolbar {
-                                ToolbarItem(placement: .topBarLeading) {
-                                    // Cuando hay ruta activa, el botón de cierre está en la barra
-                                    // superior del sheet; aquí no hace falta duplicarlo.
-                                    if routeDisplayData == nil {
-                                        SheetCloseButton {
-                                            sheetClosedByButton = true
-                                            showStopSheet = false
-                                        }
+                NavigationStack(path: $sheetNavPath) {
+                    StopDetailView(stop: nearby.stop, distance: nearby.distance, starLeading: false)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                if routeDisplayData == nil {
+                                    SheetCloseButton {
+                                        sheetClosedByButton = true
+                                        showStopSheet = false
                                     }
                                 }
                             }
-                            .navigationDestination(for: AppNavDestination.self) { dest in
-                                switch dest {
-                                case .routeArrivals(let stop, let distance, let routeShortName, let routeColor):
-                                    RouteArrivalsView(stop: stop, distance: distance,
-                                                      routeShortName: routeShortName,
-                                                      routeColor: routeColor)
-                                default:
-                                    EmptyView()
-                                }
+                        }
+                        .navigationDestination(for: AppNavDestination.self) { dest in
+                            switch dest {
+                            case .routeArrivals(let stop, let distance, let routeShortName, let routeColor):
+                                RouteArrivalsView(stop: stop, distance: distance,
+                                                  routeShortName: routeShortName,
+                                                  routeColor: routeColor)
+                            default:
+                                EmptyView()
                             }
-                    }
+                        }
                 }
                 .environment(\.colorScheme, colorScheme)
                 .preferredColorScheme(colorScheme)
+                .environment(\.isSheetMinimized, sheetDetent == Self.minimizedDetent)
+                .environment(\.dismissSheet) {
+                    sheetClosedByButton = true
+                    showStopSheet = false
+                }
                 .presentationDetents(
                     routeDisplayData != nil
                         ? [Self.minimizedDetent, .medium, .large]
@@ -175,8 +166,6 @@ struct BusMapView: View {
                     selection: $sheetDetent
                 )
                 .presentationDragIndicator(.visible)
-                // Con una línea seleccionada, el arrastre hacia abajo minimiza el sheet en lugar
-                // de cerrarlo; el cierre real solo ocurre mediante el botón X.
                 .interactiveDismissDisabled(routeDisplayData != nil)
             }
         }
@@ -490,43 +479,6 @@ struct BusMapView: View {
             guard !Task.isCancelled else { return }
             await MainActor.run { nearbyStops = stops }
         }
-    }
-}
-
-// MARK: - Barra minimizada de línea seleccionada
-
-/// Barra compacta que aparece en la parte superior del sheet cuando hay una línea activa.
-/// Sirve como encabezado persistente visible incluso cuando el sheet está minimizado.
-struct SheetRouteBar: View {
-    let routeShortName: String
-    let routeColor: String
-    let onClose: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Badge circular con el número/letra de la línea
-            ZStack {
-                Circle()
-                    .fill(Color(hex: routeColor))
-                Text(routeShortName)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .minimumScaleFactor(0.5)
-                    .padding(4)
-            }
-            .frame(width: 36, height: 36)
-
-            Text("Línea \(routeShortName)")
-                .font(.headline)
-                .lineLimit(1)
-
-            Spacer()
-
-            SheetCloseButton(action: onClose)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(height: 60)
     }
 }
 
