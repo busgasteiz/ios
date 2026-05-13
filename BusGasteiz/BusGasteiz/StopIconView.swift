@@ -100,29 +100,37 @@ struct RouteBadgeView: View {
 
     var body: some View {
         ZStack {
+            // Capa de sombra separada — fuera del drawingGroup para que se renderice correctamente.
             RoundedRectangle(cornerRadius: radius + 2)
                 .fill(Color.white)
                 .frame(width: outerSize, height: outerSize)
                 .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
 
-            RoundedRectangle(cornerRadius: radius)
-                .fill(fillColor)
-                .frame(width: inner, height: inner)
+            // Contenido coloreado rasterizado en un bitmap plano.
+            // drawingGroup() convierte la vista en una textura Metal que UIKit
+            // trata como imagen opaca, evitando el compositingFilter de la nav bar
+            // en iOS 26 dark mode que lavaría los colores de línea.
+            ZStack {
+                RoundedRectangle(cornerRadius: radius + 2)
+                    .fill(Color.white)
+                    .frame(width: outerSize, height: outerSize)
 
-            Text(routeShortName)
-                .font(.system(size: fontSize, weight: .bold))
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-                .foregroundStyle(textColor)
-                .frame(width: inner - 4)
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(fillColor)
+                    .frame(width: inner, height: inner)
+
+                Text(routeShortName)
+                    .font(.system(size: fontSize, weight: .bold))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .foregroundStyle(textColor)
+                    .frame(width: inner - 4)
+            }
+            .drawingGroup()
         }
         .overlay(alignment: .topTrailing) {
             if hasAlert { AlertBadge(size: max(9, outerSize * 0.27)) }
         }
-        // Forzar siempre light mode: el badge tiene colores fijos de línea
-        // y no debe verse afectado por el compositingFilter de la nav bar
-        // de UIKit en dark mode, que lava los colores con un blend de luminosidad.
-        .environment(\.colorScheme, .light)
     }
 }
 
