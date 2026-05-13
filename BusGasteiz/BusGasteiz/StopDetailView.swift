@@ -361,7 +361,9 @@ struct RouteArrivalsView: View {
 
     var body: some View {
         Group {
-            if arrivals.isEmpty {
+            if isSheetMinimized {
+                Color.clear
+            } else if arrivals.isEmpty {
                 ScrollView {
                     if !routeAlerts.isEmpty {
                         VStack(spacing: 8) {
