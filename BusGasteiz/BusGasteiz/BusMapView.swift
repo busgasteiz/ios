@@ -63,7 +63,7 @@ struct BusMapView: View {
                     MapPolyline(coordinates: rd.polylineBefore.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     })
-                    .stroke(.gray.opacity(0.7), lineWidth: 4)
+                    .stroke(colorScheme == .dark ? Color(white: 0.65) : Color.gray.opacity(0.7), lineWidth: 4)
                 }
                 if rd.polylineAfter.count > 1 {
                     MapPolyline(coordinates: rd.polylineAfter.map {
