@@ -141,6 +141,7 @@ struct StopDetailView: View {
             }
         }
         .onAppear { recompute() }
+        .onChange(of: stop.id) { recompute() }
         .onChange(of: dataManager.version) { recompute() }
     }
 
