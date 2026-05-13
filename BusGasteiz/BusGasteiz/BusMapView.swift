@@ -167,6 +167,9 @@ struct BusMapView: View {
                 )
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(routeDisplayData != nil)
+                // Permite interactuar con el mapa (arrastrar, zoom) cuando el sheet
+                // está en el detent minimizado; al expandirlo, el sheet captura los toques.
+                .presentationBackgroundInteraction(.enabled(upThrough: Self.minimizedDetent))
             }
         }
         .onChange(of: sheetNavPath) { _, path in
