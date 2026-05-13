@@ -420,10 +420,7 @@ struct RouteArrivalsView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if isSheetMinimized {
-                    // En estado minimizado: botón de cierre en lugar de favoritos.
-                    SheetCloseButton(action: dismissSheet)
-                } else {
+                if !isSheetMinimized {
                     let isFav = favorites.isRouteFavorite(stopId: stop.id, routeShortName: routeShortName)
                     Button {
                         favorites.toggleRoute(stopId: stop.id, routeShortName: routeShortName)
@@ -432,6 +429,11 @@ struct RouteArrivalsView: View {
                             .foregroundStyle(isFav ? .yellow : .primary)
                             .animation(.spring(duration: 0.2), value: isFav)
                     }
+                }
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                if isSheetMinimized {
+                    SheetCloseButton(action: dismissSheet)
                 }
             }
         }
