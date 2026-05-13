@@ -40,7 +40,7 @@ struct BusMapView: View {
     /// Detent activo del sheet de parada.
     @State private var sheetDetent: PresentationDetent = .medium
     /// Detent mínimo cuando hay una línea seleccionada: barra con título + botón de cierre.
-    private static let minimizedDetent: PresentationDetent = .height(88)
+    private static let minimizedDetent: PresentationDetent = .height(64)
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -165,7 +165,7 @@ struct BusMapView: View {
                         : [.medium, .large],
                     selection: $sheetDetent
                 )
-                .presentationDragIndicator(sheetDetent == Self.minimizedDetent ? .hidden : .visible)
+                .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(routeDisplayData != nil)
                 // Permite interactuar con el mapa hasta el detent medium; solo se bloquea a pantalla completa.
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
