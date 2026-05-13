@@ -47,6 +47,8 @@ struct TripInfo: Sendable {
     let headsign: String
     let serviceId: String
     var shapeId: String = ""
+    /// direction_id del feed GTFS: 0 = sentido de ida, 1 = sentido de vuelta, -1 = no disponible.
+    var directionId: Int = -1
 }
 
 struct RouteInfo: Sendable {

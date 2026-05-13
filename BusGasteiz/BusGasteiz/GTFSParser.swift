@@ -107,13 +107,15 @@ nonisolated func loadGTFS(folder: String) -> GTFSData {
         let h = splitCSV(lines.removeFirst())
         let iId = idx(h, "trip_id"), iRt = idx(h, "route_id")
         let iHs = idx(h, "trip_headsign"), iSv = idx(h, "service_id")
-        let iSh = idx(h, "shape_id")
+        let iSh = idx(h, "shape_id"), iDir = idx(h, "direction_id")
         for ln in lines {
             let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
             let r = splitCSV(t); let id = get(r, iId); guard !id.isEmpty else { continue }
+            let dirStr = get(r, iDir)
             g.trips[id] = TripInfo(id: id, routeId: get(r, iRt),
                                    headsign: get(r, iHs), serviceId: get(r, iSv),
-                                   shapeId: get(r, iSh))
+                                   shapeId: get(r, iSh),
+                                   directionId: dirStr.isEmpty ? -1 : (Int(dirStr) ?? -1))
         }
     }
 
@@ -339,16 +341,18 @@ nonisolated func loadEuskoTranGTFS(folder: String) -> GTFSData {
         let h = splitCSV(lines.removeFirst())
         let iId = localIdx(h, "trip_id"), iRt = localIdx(h, "route_id")
         let iHs = localIdx(h, "trip_headsign"), iSv = localIdx(h, "service_id")
-        let iSh = localIdx(h, "shape_id")
+        let iSh = localIdx(h, "shape_id"), iDir = localIdx(h, "direction_id")
         for ln in lines {
             let t = ln.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { continue }
             let r = splitCSV(t)
             let id = localGet(r, iId), routeId = localGet(r, iRt)
             guard !id.isEmpty, tramRouteIds.contains(routeId) else { continue }
             tramTripIds.insert(id)
+            let dirStr = localGet(r, iDir)
             g.trips[id] = TripInfo(id: id, routeId: routeId,
                                    headsign: localGet(r, iHs), serviceId: localGet(r, iSv),
-                                   shapeId: localGet(r, iSh))
+                                   shapeId: localGet(r, iSh),
+                                   directionId: dirStr.isEmpty ? -1 : (Int(dirStr) ?? -1))
         }
     }
 
@@ -1166,17 +1170,32 @@ private nonisolated func routePolylines(
 
 /// Determina si una ruta es circular.
 ///
-/// Una ruta es circular cuando NINGUNO de los viajes adicionales es un "viaje de vuelta" genuino.
-/// Un viaje de vuelta genuino debe cumplir las tres condiciones:
-///  1. Longitud comparable (≥ 80 % de las paradas del canónico).
-///  2. Solapamiento alto (≥ 40 % de intersección/máx).
-///  3. Termina en una parada distinta a la última del canónico (dirección opuesta).
+/// Usa el campo `direction_id` del feed GTFS, que es la fuente de verdad semántica:
+/// - Ruta bidireccional (lineal): tiene trips con direction_id 0 Y direction_id 1.
+/// - Ruta circular: todos los trips tienen el mismo direction_id (normalmente 0),
+///   ya que el bus siempre recorre el bucle en el mismo sentido.
+///
+/// Si el campo no está disponible (-1 en todos los trips), cae de vuelta a la
+/// heurística de solapamiento de paradas + dirección de terminus.
 private nonisolated func isRouteCircular(
     canonicalTripId: String,
     otherTripIds: [String],
     gtfsData: GTFSData
 ) -> Bool {
     guard !otherTripIds.isEmpty else { return false }
+
+    let allIds = [canonicalTripId] + otherTripIds
+    let dirIds = allIds.compactMap { gtfsData.trips[$0]?.directionId }.filter { $0 >= 0 }
+
+    // Si hay direction_id disponibles, es la fuente de verdad.
+    if !dirIds.isEmpty {
+        let hasDir0 = dirIds.contains(0)
+        let hasDir1 = dirIds.contains(1)
+        // Bidireccional (lineal) ↔ tiene ambos sentidos.
+        return !(hasDir0 && hasDir1)
+    }
+
+    // Fallback: heurística geométrica (sin direction_id en el feed).
     let canonicalSeq   = gtfsData.tripStopSequence[canonicalTripId] ?? []
     let canonicalStops = Set(canonicalSeq.map { $0.stopId })
     let canonicalCount = canonicalStops.count
