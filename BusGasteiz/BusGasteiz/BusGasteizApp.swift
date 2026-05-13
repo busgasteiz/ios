@@ -35,7 +35,7 @@ struct BusGasteizApp: App {
         .commands {
             CommandGroup(replacing: .appVisibility) { }
             CommandGroup(after: .sidebar) {
-                Button("Actualizar datos") {
+                Button("Reload data") {
                     Task { await dataManager.forceRefresh() }
                 }
                 .keyboardShortcut("r", modifiers: .command)
