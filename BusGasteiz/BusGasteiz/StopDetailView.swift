@@ -363,6 +363,7 @@ struct RouteArrivalsView: View {
         Group {
             if isSheetMinimized {
                 Color.clear
+                    .ignoresSafeArea(edges: .bottom)
             } else if arrivals.isEmpty {
                 ScrollView {
                     if !routeAlerts.isEmpty {
