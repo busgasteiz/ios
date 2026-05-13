@@ -40,7 +40,7 @@ struct BusMapView: View {
     /// Detent activo del sheet de parada.
     @State private var sheetDetent: PresentationDetent = .medium
     /// Detent mínimo cuando hay una línea seleccionada: barra con título + botón de cierre.
-    private static let minimizedDetent: PresentationDetent = .height(64)
+    private static let minimizedDetent: PresentationDetent = .height(80)
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
