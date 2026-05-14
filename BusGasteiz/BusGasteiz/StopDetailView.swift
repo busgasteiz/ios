@@ -421,7 +421,7 @@ struct RouteArrivalsView: View {
                     RouteBadgeView(routeShortName: routeShortName, colorHex: routeColor, outerSize: 34)
                     Text(stop.localizedName)
                         .font(.headline)
-                }
+                }.padding()
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if !isSheetMinimized {
