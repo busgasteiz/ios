@@ -412,11 +412,12 @@ struct BusMapView: View {
         // de forma inmediata aunque el usuario esté haciendo scroll.
         mapInteractionModes = []
         Task { @MainActor in
-            position = .region(region)
+            withAnimation(.easeInOut(duration: 0.6)) {
+                position = .region(region)
+            }
             Task { @MainActor in
                 mapInteractionModes = .all
                 // Mantener el flag activo hasta que la animación de cámara concluya.
-                // La duración estándar de MapKit es ~0,3 s; 1,2 s da margen suficiente.
                 try? await Task.sleep(for: .milliseconds(1200))
                 programmaticCameraChange = false
             }
