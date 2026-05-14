@@ -98,11 +98,10 @@ struct BusMapView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .scaleEffect(1.3)
-                        .tint(.white)
                     if case .loading(let msg) = dataManager.loadState {
                         Text(msg)
                             .font(.footnote)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
                 }
                 .padding(20)
