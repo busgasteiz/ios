@@ -59,17 +59,28 @@ struct BusMapView: View {
             // Recorrido de la línea seleccionada: tramo previo (gris) y tramo posterior (color de línea)
             if let rd = routeDisplayData {
                 let lineColor = Color(hex: rd.routeColor)
+                let greyColor = colorScheme == .dark ? Color(white: 0.65) : Color.gray.opacity(0.7)
                 if rd.polylineBefore.count > 1 {
-                    MapPolyline(coordinates: rd.polylineBefore.map {
+                    let coords = rd.polylineBefore.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    })
-                    .stroke(colorScheme == .dark ? Color(white: 0.65) : Color.gray.opacity(0.7), lineWidth: 4)
+                    }
+                    // Reborde blanco
+                    MapPolyline(coordinates: coords)
+                        .stroke(Color.white, lineWidth: 10)
+                    // Línea gris encima
+                    MapPolyline(coordinates: coords)
+                        .stroke(greyColor, lineWidth: 6)
                 }
                 if rd.polylineAfter.count > 1 {
-                    MapPolyline(coordinates: rd.polylineAfter.map {
+                    let coords = rd.polylineAfter.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    })
-                    .stroke(lineColor, lineWidth: 4)
+                    }
+                    // Reborde blanco
+                    MapPolyline(coordinates: coords)
+                        .stroke(Color.white, lineWidth: 10)
+                    // Línea de color encima
+                    MapPolyline(coordinates: coords)
+                        .stroke(lineColor, lineWidth: 6)
                 }
             }
 
