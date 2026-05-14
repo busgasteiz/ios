@@ -423,6 +423,33 @@ struct BusMapView: View {
         }
     }
 
+    private func centerOnStop(_ coordinate: CLLocationCoordinate2D) {
+        guard let region = visibleRegion else { return }
+        // El sheet en detent .medium cubre ~50% de la pantalla.
+        // Desplazamos el centro del mapa hacia el sur en un 25% del span de latitud
+        // para que la parada quede centrada en la mitad superior visible del mapa.
+        let latOffset = region.span.latitudeDelta * 0.25
+        let adjustedCenter = CLLocationCoordinate2D(
+            latitude: coordinate.latitude - latOffset,
+            longitude: coordinate.longitude
+        )
+        withAnimation(.easeInOut(duration: 0.6)) {
+            if let cam = currentCamera {
+                position = .camera(MapCamera(
+                    centerCoordinate: adjustedCenter,
+                    distance: cam.distance,
+                    heading: cam.heading,
+                    pitch: cam.pitch
+                ))
+            } else {
+                position = .region(MKCoordinateRegion(
+                    center: adjustedCenter,
+                    span: region.span
+                ))
+            }
+        }
+    }
+
     private func computeRouteDisplayFilter(stop: StopInfo, distance: Double,
                                             routeShortName: String, routeColor: String) {
         guard let gtfs = dataManager.gtfsData else { return }
@@ -436,6 +463,7 @@ struct BusMapView: View {
         let selectedId = stop.id
         let activeIds  = dataManager.activeStopIds
         let alerts     = dataManager.serviceAlerts
+        let stopCoord  = stop.coordinate
         computeRouteTask = Task.detached(priority: .userInitiated) {
             let result = buildRouteDisplay(
                 routeShortName: routeShortName, routeColor: routeColor,
@@ -443,7 +471,10 @@ struct BusMapView: View {
                 gtfsData: gtfs, activeStopIds: activeIds, alerts: alerts
             )
             guard !Task.isCancelled else { return }
-            await MainActor.run { routeDisplayData = result }
+            await MainActor.run {
+                routeDisplayData = result
+                centerOnStop(stopCoord)
+            }
         }
     }
 
