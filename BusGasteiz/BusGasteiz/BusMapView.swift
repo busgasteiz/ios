@@ -60,27 +60,26 @@ struct BusMapView: View {
             if let rd = routeDisplayData {
                 let lineColor = Color(hex: rd.routeColor)
                 let greyColor = colorScheme == .dark ? Color(white: 0.65) : Color.gray.opacity(0.7)
+                let roundStyle: (CGFloat) -> StrokeStyle = { w in
+                    StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round)
+                }
                 if rd.polylineBefore.count > 1 {
                     let coords = rd.polylineBefore.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     }
-                    // Reborde blanco
                     MapPolyline(coordinates: coords)
-                        .stroke(Color.white, lineWidth: 10)
-                    // Línea gris encima
+                        .stroke(Color.white, style: roundStyle(10))
                     MapPolyline(coordinates: coords)
-                        .stroke(greyColor, lineWidth: 6)
+                        .stroke(greyColor, style: roundStyle(6))
                 }
                 if rd.polylineAfter.count > 1 {
                     let coords = rd.polylineAfter.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     }
-                    // Reborde blanco
                     MapPolyline(coordinates: coords)
-                        .stroke(Color.white, lineWidth: 10)
-                    // Línea de color encima
+                        .stroke(Color.white, style: roundStyle(10))
                     MapPolyline(coordinates: coords)
-                        .stroke(lineColor, lineWidth: 6)
+                        .stroke(lineColor, style: roundStyle(6))
                 }
             }
 
