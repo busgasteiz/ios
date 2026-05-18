@@ -45,46 +45,8 @@ struct BusMapView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
         Map(position: $position, interactionModes: mapInteractionModes, selection: $selectedStopId) {
-            // Anotaciones de paradas: sólo las de la línea activa (si hay filtro), o todas las cercanas
-            ForEach(routeDisplayData?.stops ?? nearbyStops) { nearby in
-                Annotation(nearby.stop.localizedName, coordinate: nearby.stop.coordinate, anchor: .bottom) {
-                    StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
-                                       isTram: nearby.stop.isTram,
-                                       hasArrivals: nearby.hasArrivals,
-                                       hasAlert: nearby.hasAlert)
-                }
-                .tag(nearby.stop.id)
-            }
-
-            // Recorrido de la línea seleccionada: tramo previo (gris) y tramo posterior (color de línea)
-            if let rd = routeDisplayData {
-                let lineColor = Color(hex: rd.routeColor)
-                let greyColor = colorScheme == .dark ? Color(white: 0.65) : Color.gray.opacity(0.7)
-                let roundStyle: (CGFloat) -> StrokeStyle = { w in
-                    StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round)
-                }
-                if rd.polylineBefore.count > 1 {
-                    let coords = rd.polylineBefore.map {
-                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    }
-                    MapPolyline(coordinates: coords)
-                        .stroke(Color.white, style: roundStyle(10))
-                    MapPolyline(coordinates: coords)
-                        .stroke(greyColor, style: roundStyle(6))
-                }
-                if rd.polylineAfter.count > 1 {
-                    let coords = rd.polylineAfter.map {
-                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    }
-                    MapPolyline(coordinates: coords)
-                        .stroke(Color.white, style: roundStyle(10))
-                    MapPolyline(coordinates: coords)
-                        .stroke(lineColor, style: roundStyle(6))
-                }
-            }
-
-            // Posición del usuario
-            UserAnnotation()
+            stopAnnotations
+            routePolylines
         }
         .mapStyle(.standard)
         .ignoresSafeArea()
@@ -244,28 +206,7 @@ struct BusMapView: View {
             }
             recompute()
         }
-        .onAppear {
-            if dataManager.gtfsData == nil {
-                Task { await dataManager.refreshIfNeeded() }
-            }
-            guard !isReady else { return }
-            // Centrado inicial: posicionamiento síncrono sin animación.
-            // No se usa centerOnUser() aquí porque sus Tasks asíncronos
-            // extienden la animación de cámara a lo largo de varios frames de
-            // render, lo que produce un parpadeo si el usuario cambia de pestaña
-            // durante los primeros ~300 ms tras abrir el mapa por primera vez.
-            let initialRegion = MKCoordinateRegion(
-                center: locationManager.activePosition.coordinate,
-                latitudinalMeters: appSettings.searchRadius * 4,
-                longitudinalMeters: appSettings.searchRadius * 4
-            )
-            withAnimation(.none) { position = .region(initialRegion) }
-            Task {
-                try? await Task.sleep(for: .milliseconds(350))
-                isReady = true
-                recompute()
-            }
-        }
+        .onAppear { handleOnAppear() }
         if #available(iOS 26, *) {
             compassButton
                 .padding(.top, 8)
@@ -276,6 +217,56 @@ struct BusMapView: View {
                 .padding(.trailing, 8)
         }
         } // ZStack
+    }
+
+    // MARK: Map content
+
+    @MapContentBuilder
+    private var stopAnnotations: some MapContent {
+        // Anotaciones de paradas: sólo las de la línea activa (si hay filtro), o todas las cercanas
+        ForEach(routeDisplayData?.stops ?? nearbyStops) { nearby in
+            Annotation(nearby.stop.localizedName, coordinate: nearby.stop.coordinate, anchor: .bottom) {
+                StopAnnotationView(isSelected: selectedStopId == nearby.stop.id,
+                                   isTram: nearby.stop.isTram,
+                                   hasArrivals: nearby.hasArrivals,
+                                   hasAlert: nearby.hasAlert)
+            }
+            .tag(nearby.stop.id)
+        }
+        // Posición del usuario
+        UserAnnotation(anchor: .center) {
+            UserLocationDot(color: .naranja)
+        }
+    }
+
+    @MapContentBuilder
+    private var routePolylines: some MapContent {
+        // Recorrido de la línea seleccionada: tramo previo (gris) y tramo posterior (color de línea)
+        if let rd = routeDisplayData {
+            let lineColor = Color(hex: rd.routeColor)
+            let greyColor = colorScheme == .dark ? Color(white: 0.65) : Color.gray.opacity(0.7)
+            let roundStyle: (CGFloat) -> StrokeStyle = { w in
+                StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round)
+            }
+            if rd.polylineBefore.count > 1 {
+                let coords = rd.polylineBefore.map {
+                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                }
+                MapPolyline(coordinates: coords)
+                    .stroke(Color.white, style: roundStyle(10))
+                MapPolyline(coordinates: coords)
+                    .stroke(greyColor, style: roundStyle(6))
+            }
+            if rd.polylineAfter.count > 1 {
+                let coords = rd.polylineAfter.map {
+                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                }
+                MapPolyline(coordinates: coords)
+                    .stroke(Color.white, style: roundStyle(10))
+                MapPolyline(coordinates: coords)
+                    .stroke(lineColor, style: roundStyle(6))
+            }
+        }
     }
 
     // MARK: Toolbar
@@ -393,6 +384,29 @@ struct BusMapView: View {
         let lonMeters = region.span.longitudeDelta * 111_000 * cosLat
         let estimated = min(latMeters, lonMeters) / 4
         return presets.min(by: { abs($0 - estimated) < abs($1 - estimated) }) ?? 200
+    }
+
+    private func handleOnAppear() {
+        if dataManager.gtfsData == nil {
+            Task { await dataManager.refreshIfNeeded() }
+        }
+        guard !isReady else { return }
+        // Centrado inicial: posicionamiento síncrono sin animación.
+        // No se usa centerOnUser() aquí porque sus Tasks asíncronos
+        // extienden la animación de cámara a lo largo de varios frames de
+        // render, lo que produce un parpadeo si el usuario cambia de pestaña
+        // durante los primeros ~300 ms tras abrir el mapa por primera vez.
+        let initialRegion = MKCoordinateRegion(
+            center: locationManager.activePosition.coordinate,
+            latitudinalMeters: appSettings.searchRadius * 4,
+            longitudinalMeters: appSettings.searchRadius * 4
+        )
+        withAnimation(.none) { position = .region(initialRegion) }
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            isReady = true
+            recompute()
+        }
     }
 
     private func centerOnUser() {
@@ -536,5 +550,24 @@ struct StopAnnotationView: View {
     var body: some View {
         StopIconView(isTram: isTram, size: size, hasArrivals: hasArrivals, hasAlert: hasAlert)
             .animation(.spring(duration: 0.2), value: isSelected)
+    }
+}
+
+// MARK: - Marcador de posición del usuario
+
+private struct UserLocationDot: View {
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(color.opacity(0.2))
+                .frame(width: 32, height: 32)
+            Circle()
+                .fill(color)
+                .frame(width: 14, height: 14)
+                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+        }
     }
 }
