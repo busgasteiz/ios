@@ -75,7 +75,7 @@ struct AboutView: View {
                         name: "Autumn Rainbow – COLOURlovers",
                         license: "CC BY-NC-SA",
                         systemImage: "paintpalette",
-                        url: URL(string: "http://www.colourlovers.com/palette/3240116/%E2%80%A2Autumn_Rainbow%E2%80%A2")!
+                        url: URL(string: "https://www.colourlovers.com/palette/3240116/%E2%80%A2Autumn_Rainbow%E2%80%A2")!
                     )
                 }
 
