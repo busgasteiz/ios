@@ -565,7 +565,7 @@ private struct UserLocationDot: View {
                 .frame(width: 32, height: 32)
             Circle()
                 .fill(color)
-                .frame(width: 14, height: 14)
+                .frame(width: 18, height: 18)
                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
                 .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
         }
